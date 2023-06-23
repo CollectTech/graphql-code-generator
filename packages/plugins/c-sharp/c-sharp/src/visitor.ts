@@ -38,7 +38,7 @@ import {
   convertSafeName,
   wrapFieldType,
   getListTypeField,
-} from '@graphql-codegen/c-sharp-common';
+} from '@cdn-publishing/graphql-codegen-c-sharp-common';
 import { pascalCase } from 'change-case-all';
 import {
   JsonAttributesSource,

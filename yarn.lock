@@ -2259,6 +2259,29 @@
     "@graphql-tools/load" "6.2.4"
     tslib "2.0.2"
 
+"@graphql-codegen/c-sharp-common@0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@graphql-codegen/c-sharp-common/-/c-sharp-common-0.1.1.tgz#e469a1df7f2fe098ca6054473c4fb6be4bf2bbaf"
+  integrity sha512-mmUXCH4GCTPZK3dNNGoCdDCNx30GTMEM0SBzShmilNKEhrmZS4N93MQIa7HCpkaSf7U0apGFzEzsxxhQ+0NLvQ==
+  dependencies:
+    "@graphql-codegen/plugin-helpers" "^2.6.2"
+    "@graphql-codegen/visitor-plugin-common" "^2.12.1"
+    auto-bind "~4.0.0"
+    change-case-all "1.0.14"
+    tslib "~2.4.0"
+
+"@graphql-codegen/c-sharp@4.3.1":
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/@graphql-codegen/c-sharp/-/c-sharp-4.3.1.tgz#32e3e84bfc2408e41491d3207877d2156aeb9a93"
+  integrity sha512-LbjtrTKo9WV2qMItO5fhWAgnUaeAbzgfU41ImOt78QnoLGdWl185fYzGqsUJEsBFiWyq+8nQoLAHwrAm6SWsvA==
+  dependencies:
+    "@graphql-codegen/c-sharp-common" "0.1.1"
+    "@graphql-codegen/plugin-helpers" "^2.6.2"
+    "@graphql-codegen/visitor-plugin-common" "^2.12.1"
+    change-case-all "1.0.14"
+    tslib "~2.4.0"
+    unixify "^1.0.0"
+
 "@graphql-tools/apollo-engine-loader@^7.3.6":
   version "7.3.6"
   resolved "https://registry.yarnpkg.com/@graphql-tools/apollo-engine-loader/-/apollo-engine-loader-7.3.6.tgz#a2bd7cbae69975bb8ccd33e7ca4c6a705671dc30"
