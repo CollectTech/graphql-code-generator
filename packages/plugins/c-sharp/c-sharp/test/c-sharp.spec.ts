@@ -178,6 +178,21 @@ describe('C#', () => {
           guest
         `);
       });
+
+      it('Should mark PascalCase enum values with PascalCase modifier', async () => {
+        const schema = buildSchema(/* GraphQL */ `
+          enum UserRole {
+            AdminRole
+          }
+        `);
+        const result = await plugin(schema, [], {}, { outputFile: '' });
+        expect(result).toBeSimilarStringTo(`
+          [PascalCase]
+          public enum UserRole {
+            AdminRole
+          }
+        `);
+      });
     });
 
     describe('Reserved keywords', () => {
@@ -223,7 +238,7 @@ describe('C#', () => {
       const result = await plugin(schema, [], {}, { outputFile: '' });
       expect(result).toBeSimilarStringTo(`
         public int? id { get; set; }
-        public string email { get; set; }
+        public string? email { get; set; }
       `);
     });
 
@@ -342,7 +357,7 @@ describe('C#', () => {
           [${jsonConfig.propertyAttribute}("id")]
           public int? id { get; set; }
           [${jsonConfig.propertyAttribute}("email")]
-          public string email { get; set; }
+          public string? email { get; set; }
         `);
       }
     );
@@ -361,7 +376,7 @@ describe('C#', () => {
 
       expect(result).toBeSimilarStringTo(`
           public int? id { get; set; }
-          public string email { get; set; }
+          public string? email { get; set; }
         `);
     });
 
@@ -411,7 +426,7 @@ describe('C#', () => {
       expect(result).toBeSimilarStringTo(`
         [Obsolete("Field is obsolete, use id")]
         [JsonProperty("refid")]
-        public string refid { get; set; }
+        public string? refid { get; set; }
       `);
     });
 
@@ -549,8 +564,8 @@ describe('C#', () => {
         expect(result).toBeSimilarStringTo(`
           public int? intOpt { get; set; }
           public double? fltOpt { get; set; }
-          public string idOpt { get; set; }
-          public string strOpt { get; set; }
+          public string? idOpt { get; set; }
+          public string? strOpt { get; set; }
           public bool? boolOpt { get; set; }
         `);
       });
@@ -583,7 +598,7 @@ describe('C#', () => {
           }
         `);
         const result = await plugin(schema, [], {}, { outputFile: '' });
-        expect(result).toBeSimilarStringTo('public List<int> arr { get; set; }');
+        expect(result).toBeSimilarStringTo('public List<int>? arr { get; set; }');
       });
 
       it('Should use custom list type for arrays when listType is specified', async () => {
@@ -593,10 +608,10 @@ describe('C#', () => {
           }
         `);
         const result1 = await plugin(schema, [], { listType: 'IEnumerable' }, { outputFile: '' });
-        expect(result1).toContain('public IEnumerable<int> arr { get; set; }');
+        expect(result1).toContain('public IEnumerable<int>? arr { get; set; }');
 
         const result2 = await plugin(schema, [], { listType: 'HashSet' }, { outputFile: '' });
-        expect(result2).toContain('public HashSet<int> arr { get; set; }');
+        expect(result2).toContain('public HashSet<int>? arr { get; set; }');
       });
 
       it('Should use correct array inner types', async () => {
@@ -614,8 +629,8 @@ describe('C#', () => {
         const result = await plugin(schema, [], config, { outputFile: '' });
 
         expect(result).toBeSimilarStringTo(`
-          public IEnumerable<int> arr1 { get; set; }
-          public IEnumerable<double?> arr2 { get; set; }
+          public IEnumerable<int>? arr1 { get; set; }
+          public IEnumerable<double?>? arr2 { get; set; }
           [Required]
           [JsonRequired]
           public IEnumerable<int?> arr3 { get; set; }
@@ -642,13 +657,13 @@ describe('C#', () => {
         const result = await plugin(schema, [], config, { outputFile: '' });
 
         expect(result).toBeSimilarStringTo(`
-          public IEnumerable<IEnumerable<int>> arr1 { get; set; }
+          public IEnumerable<IEnumerable<int>?>? arr1 { get; set; }
           [Required]
           [JsonRequired]
           public IEnumerable<IEnumerable<IEnumerable<double?>>> arr2 { get; set; }
           [Required]
           [JsonRequired]
-          public IEnumerable<IEnumerable<Complex>> arr3 { get; set; }
+          public IEnumerable<IEnumerable<Complex?>?> arr3 { get; set; }
         `);
       });
     });
@@ -668,7 +683,7 @@ describe('C#', () => {
         expect(result).toBeSimilarStringTo(`
           public int? @int { get; set; }
           public double? @float { get; set; }
-          public string @string { get; set; }
+          public string? @string { get; set; }
           public bool? @bool { get; set; }
         `);
       });
@@ -697,11 +712,21 @@ describe('C#', () => {
       const result = await plugin(schema, [], config, { outputFile: '' });
 
       expect(result).toBeSimilarStringTo(`
-        public int? val { get; set; }
-        public double? flt { get; set; }
+        [Required]
+        [JsonRequired]
+        public int val { get; set; }
+        [Required]
+        [JsonRequired]
+        public double flt { get; set; }
+        [Required]
+        [JsonRequired]
         public string str { get; set; }
-        public bool? flag { get; set; }
-        public Length? hair { get; set; }
+        [Required]
+        [JsonRequired]
+        public bool flag { get; set; }
+        [Required]
+        [JsonRequired]
+        public Length hair { get; set; }
       `);
     });
 
@@ -720,10 +745,72 @@ describe('C#', () => {
       const result = await plugin(schema, [], config, { outputFile: '' });
 
       expect(result).toBeSimilarStringTo(`
-        public HashSet<int?> arr1 { get; set; }
-        public HashSet<int> arr2 { get; set; }
-        public HashSet<string> arr3 { get; set; }
+        public HashSet<int?>? arr1 { get; set; }
+        public HashSet<int>? arr2 { get; set; }
+        [Required]
+        [JsonRequired]
+        public HashSet<string?> arr3 { get; set; }
+        [Required]
+        [JsonRequired]
         public HashSet<string> arr4 { get; set; }
+      `);
+    });
+  });
+
+  describe('Union', () => {
+    it('Should create the graph type for the union', async () => {
+      const schema = buildSchema(/* GraphQL */ `
+        type First {
+          first: Int
+        }
+
+        type Second {
+          second: String
+        }
+
+        union Both = First | Second
+      `);
+      const result = await plugin(schema, [], {}, { outputFile: '' });
+
+      expect(result).toBeSimilarStringTo(`
+        public class Both : UnionGraphType {
+          public Both() {
+            Name = "Both";
+            #region types
+            Type<AutoRegisteringObjectGraphType<First>>();
+            Type<AutoRegisteringObjectGraphType<Second>>();
+            #endregion
+          }
+        }
+      `);
+    });
+
+    it('Should turn references to graph types of unions into plain object', async () => {
+      // union types are not generated as a class
+      const schema = buildSchema(/* GraphQL */ `
+        type First {
+          first: Int
+        }
+
+        type Second {
+          second: String
+        }
+
+        union Both = First | Second
+
+        type Test {
+          value: Both!
+        }
+      `);
+      const result = await plugin(schema, [], {}, { outputFile: '' });
+
+      expect(result).toBeSimilarStringTo(`
+        public class Test {
+          #region members
+          [JsonProperty("value")]
+          public object value { get; set; }
+          #endregion
+        }
       `);
     });
   });

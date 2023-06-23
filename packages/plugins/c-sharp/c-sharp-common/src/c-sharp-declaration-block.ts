@@ -16,6 +16,7 @@ export class CSharpDeclarationBlock {
   _block = null;
   _comment = null;
   _nestedClasses: CSharpDeclarationBlock[] = [];
+  _attributes: string[] = [];
 
   nestedClass(nstCls: CSharpDeclarationBlock): CSharpDeclarationBlock {
     this._nestedClasses.push(nstCls);
@@ -79,6 +80,12 @@ export class CSharpDeclarationBlock {
     return this;
   }
 
+  withAttributes(attributes: string[]): CSharpDeclarationBlock {
+    this._attributes = attributes;
+
+    return this;
+  }
+
   public get string(): string {
     let result = '';
 
@@ -105,6 +112,9 @@ export class CSharpDeclarationBlock {
           implementsStr = ` : ${this._implementsStr.join(', ')}`;
         }
 
+        this._attributes.forEach(attribute => {
+          result += `[${attribute}]\n`;
+        });
         result += `${this._access}${isStatic}${final} ${this._kind} ${name}${extendStr}${implementsStr} `;
       }
     }

@@ -23,8 +23,7 @@ export class CSharpFieldType implements CSharpField {
   }
 
   get innerTypeName(): string {
-    const nullable = this.baseType.valueType && !this.baseType.required ? '?' : '';
-    return `${this.baseType.type}${nullable}`;
+    return `${this.baseType.type}`;
   }
 
   get isOuterTypeRequired(): boolean {

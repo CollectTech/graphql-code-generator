@@ -71,11 +71,15 @@ export function getListInnerTypeNode(typeNode: TypeNode): TypeNode {
 export function wrapFieldType(
   fieldType: CSharpFieldType,
   listTypeField?: ListTypeField,
-  listType = 'IEnumerable'
+  listType = 'IEnumerable',
+  forceRequired = false
 ): string {
   if (listTypeField) {
     const innerType = wrapFieldType(fieldType, listTypeField.type, listType);
-    return `${listType}<${innerType}>`;
+    const nullable = listTypeField.required ? '' : '?';
+    return `${listType}<${innerType}>${nullable}`;
   }
-  return fieldType.innerTypeName;
+
+  const nullable = forceRequired || fieldType.baseType.required ? '' : '?';
+  return `${fieldType.innerTypeName}${nullable}`;
 }

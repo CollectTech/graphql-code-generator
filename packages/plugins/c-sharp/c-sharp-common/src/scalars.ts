@@ -22,4 +22,5 @@ export const csharpValueTypes = [
   'short',
   'ushort',
   'DateTime',
+  'string',
 ];

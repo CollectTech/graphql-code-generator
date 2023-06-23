@@ -25,6 +25,8 @@ import {
   DirectiveNode,
   StringValueNode,
   NamedTypeNode,
+  UnionTypeDefinitionNode,
+  isUnionType,
 } from 'graphql';
 import {
   C_SHARP_SCALARS,
@@ -75,7 +77,12 @@ export class CSharpResolversVisitor extends BaseVisitor<CSharpResolversPluginRaw
   }
 
   public getImports(): string {
-    const allImports = ['System', 'System.Collections.Generic', 'System.ComponentModel.DataAnnotations'];
+    const allImports = [
+      'System',
+      'System.Collections.Generic',
+      'System.ComponentModel.DataAnnotations',
+      'GraphQL.Types',
+    ];
     if (this._parsedConfig.emitJsonAttributes) {
       const jsonAttributesNamespace = this.jsonAttributesConfiguration.namespace;
       allImports.push(jsonAttributesNamespace);
@@ -120,15 +127,16 @@ export class CSharpResolversVisitor extends BaseVisitor<CSharpResolversPluginRaw
 
   EnumTypeDefinition(node: EnumTypeDefinitionNode): string {
     const enumName = this.convertName(node.name);
-    const enumValues = node.values.map(enumValue => (enumValue as any)(node.name.value)).join(',\n');
-    const enumBlock = [enumValues].join('\n');
-
+    const enumValues = node.values.map(enumValue => (enumValue as any)(node.name.value));
+    const enumValuesString = enumValues.join(',\n');
+    const anyValueIsInPascalCase = enumValues.some(v => /^[A-Z](([a-z]+[A-Z]?)*$)/.test(v.trim()));
     return new CSharpDeclarationBlock()
+      .withAttributes(anyValueIsInPascalCase ? ['PascalCase'] : [])
       .access('public')
       .asKind('enum')
       .withComment(node.description)
       .withName(enumName)
-      .withBlock(enumBlock).string;
+      .withBlock(enumValuesString).string;
   }
 
   getFieldHeader(
@@ -236,6 +244,15 @@ export class CSharpResolversVisitor extends BaseVisitor<CSharpResolversPluginRaw
         },
         listType,
       });
+    } else if (isUnionType(schemaType)) {
+      result = new CSharpFieldType({
+        baseType: {
+          type: 'object',
+          required,
+          valueType: true,
+        },
+        listType,
+      });
     } else {
       result = new CSharpFieldType({
         baseType: {
@@ -247,10 +264,10 @@ export class CSharpResolversVisitor extends BaseVisitor<CSharpResolversPluginRaw
       });
     }
 
-    if (hasDefaultValue) {
-      // Required field is optional when default value specified, see #4273
-      (result.listType || result.baseType).required = false;
-    }
+    // if (hasDefaultValue) {
+    //   // Required field is optional when default value specified, see #4273
+    //   (result.listType || result.baseType).required = false;
+    // }
 
     return result;
   }
@@ -316,6 +333,31 @@ ${classSummary}public class ${convertSafeName(name)}${interfaceImpl} {
   #region members
 ${classMembers}
   #endregion
+}
+#endregion`;
+  }
+
+  protected buildUnionClass(name: string, description: StringValueNode, types: ReadonlyArray<NamedTypeNode>): string {
+    const safeName = convertSafeName(name);
+    const classSummary = transformComment(description?.value);
+    const classTypes = types
+      .map(arg => {
+        const fieldType = this.resolveInputFieldType(arg);
+        const csharpFieldType = wrapFieldType(fieldType, fieldType.listType, this.config.listType, true);
+        return indent(`Type<AutoRegisteringObjectGraphType<${csharpFieldType}>>();`, 2);
+      })
+      .join('\n');
+
+    return `
+#region ${name}
+${classSummary}public class ${safeName} : UnionGraphType {
+  public ${safeName}() {
+    Name = "${safeName}";
+    
+    #region types
+${classTypes}
+    #endregion
+  }
 }
 #endregion`;
   }
@@ -421,6 +463,10 @@ ${
     }
 
     return this.buildClass(node.name.value, node.description, node.fields, node.interfaces);
+  }
+
+  UnionTypeDefinition(node: UnionTypeDefinitionNode): string {
+    return this.buildUnionClass(node.name.value, node.description, node.types);
   }
 
   InterfaceTypeDefinition(node: InterfaceTypeDefinitionNode): string {
