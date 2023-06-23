@@ -7,6 +7,7 @@ export function resolveExternalModuleAndFn(pointer: any): any {
     return pointer;
   }
 
+  // eslint-disable-next-line prefer-const
   let [moduleName, functionName] = pointer.split('#');
   // Temp workaround until v2
   if (moduleName === 'change-case') {

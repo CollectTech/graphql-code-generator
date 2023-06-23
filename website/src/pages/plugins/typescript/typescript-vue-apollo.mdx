@@ -1,24 +1,17 @@
 ---
 title: typescript-vue-apollo
-description: GraphQL Code Generator plugin for Vue Apollo. It generates Vue Apollo hooks and TypeScript types. It also generates a Vue plugin that can be used to register the generated hooks as global components.
 ---
 
-import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNote: true })
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<Callout type="info">
+export const getStaticProps = getNpmInfo('typescript-vue-apollo')
 
-We now recommend using the `client-preset` package for a **better developer experience** and smaller impact on bundle size.
+<PackageHeader hasOperationsNote />
 
-**Get started on [our "React/Vue" guide](/docs/guides/react-vue).**
+Instead of using this plugin, it is recommended that you use the [TypedDocumentNode plugin](./typed-document-node) together with the [Vue Apollo library](https://apollo.vuejs.org).
 
-</Callout>
-
-<PluginHeader />
-
-<PluginApiDocs />
+<PackageApiDocs />
 
 ## Examples
 

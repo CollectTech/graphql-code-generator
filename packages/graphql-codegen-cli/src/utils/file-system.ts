@@ -1,10 +1,5 @@
-import { promises, unlink as fsUnlink } from 'fs';
-
-const { access: fsAccess, writeFile: fsWriteFile, readFile: fsReadFile, mkdir } = promises;
-
-export function access(...args: Parameters<typeof fsAccess>) {
-  return fsAccess(...args);
-}
+import { unlink as fsUnlink, promises } from 'fs';
+const { writeFile: fsWriteFile, readFile: fsReadFile, stat: fsStat } = promises;
 
 export function writeFile(filepath: string, content: string) {
   return fsWriteFile(filepath, content);
@@ -14,10 +9,14 @@ export function readFile(filepath: string) {
   return fsReadFile(filepath, 'utf-8');
 }
 
-export function unlinkFile(filePath: string, cb?: (err?: Error) => any): void {
-  fsUnlink(filePath, cb);
+export async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    return (await fsStat(filePath)).isFile();
+  } catch (err) {
+    return false;
+  }
 }
 
-export function mkdirp(filePath: string) {
-  return mkdir(filePath, { recursive: true });
+export function unlinkFile(filePath: string, cb?: (err?: Error) => any): void {
+  fsUnlink(filePath, cb);
 }

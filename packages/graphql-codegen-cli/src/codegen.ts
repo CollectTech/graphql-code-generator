@@ -1,23 +1,27 @@
-import fs from 'fs';
-import { createRequire } from 'module';
-import { cpus } from 'os';
-import path from 'path';
-import { codegen } from '@graphql-codegen/core';
 import {
-  CodegenPlugin,
-  getCachedDocumentNodeFromSchema,
-  normalizeConfig,
-  normalizeInstanceOrArray,
-  normalizeOutputParam,
+  DetailedError,
   Types,
+  CodegenPlugin,
+  normalizeOutputParam,
+  normalizeInstanceOrArray,
+  normalizeConfig,
+  getCachedDocumentNodeFromSchema,
+  isDetailedError,
 } from '@graphql-codegen/plugin-helpers';
-import { DocumentNode, GraphQLError, GraphQLSchema } from 'graphql';
-import { Listr, ListrTask } from 'listr2';
-import { CodegenContext, ensureContext, shouldEmitLegacyCommonJSImports } from './config.js';
+import { codegen } from '@graphql-codegen/core';
+
+import { AggregateError } from '@graphql-tools/utils';
+
+import { GraphQLError, GraphQLSchema, DocumentNode } from 'graphql';
 import { getPluginByName } from './plugins.js';
 import { getPresetByName } from './presets.js';
 import { debugLog, printLogs } from './utils/debugging.js';
-import { getDocumentTransform } from './documentTransforms.js';
+import { CodegenContext, ensureContext, shouldEmitLegacyCommonJSImports } from './config.js';
+import fs from 'fs';
+import path from 'path';
+import { cpus } from 'os';
+import { createRequire } from 'module';
+import { Listr, ListrTask } from 'listr2';
 
 /**
  * Poor mans ESM detection.
@@ -47,7 +51,7 @@ const makeDefaultLoader = (from: string) => {
   };
 };
 
-type Ctx = { errors: Error[] };
+type Ctx = { errors: DetailedError[] | Error[] };
 
 function createCache(): <T>(namespace: string, key: string, factory: () => Promise<T>) => Promise<T> {
   const cache = new Map<string, Promise<unknown>>();
@@ -82,8 +86,8 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
   const cache = createCache();
 
   function wrapTask(task: () => void | Promise<void>, source: string, taskName: string, ctx: Ctx) {
-    return () =>
-      context.profiler.run(async () => {
+    return () => {
+      return context.profiler.run(async () => {
         try {
           await Promise.resolve().then(() => task());
         } catch (error) {
@@ -95,6 +99,7 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
           throw error;
         }
       }, taskName);
+    };
   }
 
   async function normalize() {
@@ -118,8 +123,9 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
     const generateKeys = Object.keys(config.generates || {});
 
     if (generateKeys.length === 0) {
-      throw new Error(
-        `Invalid Codegen Configuration! \n
+      throw new DetailedError(
+        'Invalid Codegen Configuration!',
+        `
         Please make sure that your codegen config file contains the "generates" field, with a specification for the plugins you need.
 
         It should looks like that:
@@ -130,7 +136,8 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
           my-file.ts:
             - plugin1
             - plugin2
-            - plugin3`
+            - plugin3
+        `
       );
     }
 
@@ -138,8 +145,9 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
       const output = (generates[filename] = normalizeOutputParam(config.generates[filename]));
 
       if (!output.preset && (!output.plugins || output.plugins.length === 0)) {
-        throw new Error(
-          `Invalid Codegen Configuration! \n
+        throw new DetailedError(
+          'Invalid Codegen Configuration!',
+          `
           Please make sure that your codegen config file has defined plugins list for output "${filename}".
 
           It should looks like that:
@@ -158,15 +166,11 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
 
     if (
       rootSchemas.length === 0 &&
-      Object.keys(generates).some(
-        filename =>
-          !generates[filename].schema ||
-          (Array.isArray(generates[filename].schema === 'object') &&
-            (generates[filename].schema as unknown as any[]).length === 0)
-      )
+      Object.keys(generates).some(filename => !generates[filename].schema || generates[filename].schema.length === 0)
     ) {
-      throw new Error(
-        `Invalid Codegen Configuration! \n
+      throw new DetailedError(
+        'Invalid Codegen Configuration!',
+        `
         Please make sure that your codegen config file contains either the "schema" field
         or every generated file has its own "schema" field.
 
@@ -198,27 +202,21 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
             const outputConfig = generates[filename];
             const hasPreset = !!outputConfig.preset;
 
-            const title = `Generate to ${filename}`;
+            const title = hasPreset
+              ? `Generate to ${filename} (using EXPERIMENTAL preset "${outputConfig.preset}")`
+              : `Generate ${filename}`;
 
             return {
               title,
-              async task(_, subTask) {
+              task: (_, subTask) => {
                 let outputSchemaAst: GraphQLSchema;
                 let outputSchema: DocumentNode;
                 const outputFileTemplateConfig = outputConfig.config || {};
                 let outputDocuments: Types.DocumentFile[] = [];
                 const outputSpecificSchemas = normalizeInstanceOrArray<Types.Schema>(outputConfig.schema);
-                let outputSpecificDocuments = normalizeInstanceOrArray<Types.OperationDocument>(outputConfig.documents);
-
-                const preset: Types.OutputPreset | null = hasPreset
-                  ? typeof outputConfig.preset === 'string'
-                    ? await getPresetByName(outputConfig.preset, makeDefaultLoader(context.cwd))
-                    : outputConfig.preset
-                  : null;
-
-                if (preset?.prepareDocuments) {
-                  outputSpecificDocuments = await preset.prepareDocuments(filename, outputSpecificDocuments);
-                }
+                const outputSpecificDocuments = normalizeInstanceOrArray<Types.OperationDocument>(
+                  outputConfig.documents
+                );
 
                 return subTask.newListr(
                   [
@@ -273,20 +271,10 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
 
                           const hash = JSON.stringify(documentPointerMap);
                           const result = await cache('documents', hash, async () => {
-                            try {
-                              const documents = await context.loadDocuments(documentPointerMap);
-                              return {
-                                documents,
-                              };
-                            } catch (error) {
-                              if (config.ignoreNoDocuments) {
-                                return {
-                                  documents: [],
-                                };
-                              }
-
-                              throw error;
-                            }
+                            const documents = await context.loadDocuments(documentPointerMap);
+                            return {
+                              documents,
+                            };
                           });
 
                           outputDocuments = result.documents;
@@ -308,9 +296,13 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
                             normalizedPluginsArray.map(plugin => getPluginByName(Object.keys(plugin)[0], pluginLoader))
                           );
 
-                          const pluginMap: {
-                            [name: string]: CodegenPlugin;
-                          } = Object.fromEntries(
+                          const preset: Types.OutputPreset = hasPreset
+                            ? typeof outputConfig.preset === 'string'
+                              ? await getPresetByName(outputConfig.preset, makeDefaultLoader(context.cwd))
+                              : outputConfig.preset
+                            : null;
+
+                          const pluginMap: { [name: string]: CodegenPlugin } = Object.fromEntries(
                             pluginPackages.map((pkg, i) => {
                               const plugin = normalizedPluginsArray[i];
                               const name = Object.keys(plugin)[0];
@@ -323,22 +315,10 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
                             ...(typeof outputFileTemplateConfig === 'string'
                               ? { value: outputFileTemplateConfig }
                               : outputFileTemplateConfig),
-                            emitLegacyCommonJSImports: shouldEmitLegacyCommonJSImports(config),
+                            emitLegacyCommonJSImports: shouldEmitLegacyCommonJSImports(config, filename),
                           };
 
-                          const documentTransforms = Array.isArray(outputConfig.documentTransforms)
-                            ? await Promise.all(
-                                outputConfig.documentTransforms.map(async (config, index) => {
-                                  return await getDocumentTransform(
-                                    config,
-                                    makeDefaultLoader(context.cwd),
-                                    `the element at index ${index} of the documentTransforms`
-                                  );
-                                })
-                              )
-                            : [];
-
-                          const outputs: Types.GenerateOptions[] = preset
+                          const outputs: Types.GenerateOptions[] = hasPreset
                             ? await context.profiler.run(
                                 async () =>
                                   preset.buildGeneratesSection({
@@ -352,7 +332,6 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
                                     pluginMap,
                                     pluginContext,
                                     profiler: context.profiler,
-                                    documentTransforms,
                                   }),
                                 `Build Generates Section: ${filename}`
                               )
@@ -367,15 +346,15 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
                                   pluginMap,
                                   pluginContext,
                                   profiler: context.profiler,
-                                  documentTransforms,
                                 },
                               ];
 
                           const process = async (outputArgs: Types.GenerateOptions) => {
                             const output = await codegen({
-                              ...outputArgs,
-                              // @ts-expect-error todo: fix 'emitLegacyCommonJSImports' does not exist in type 'GenerateOptions'
-                              emitLegacyCommonJSImports: shouldEmitLegacyCommonJSImports(config, outputArgs.filename),
+                              ...{
+                                ...outputArgs,
+                                emitLegacyCommonJSImports: shouldEmitLegacyCommonJSImports(config, outputArgs.filename),
+                              },
                               cache,
                             });
                             result.push({
@@ -401,10 +380,11 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
               },
               // It doesn't stop when one of tasks failed, to finish at least some of outputs
               exitOnError: false,
+              concurrent: cpus().length,
             };
           });
 
-          return task.newListr(generateTasks, { concurrent: cpus().length });
+          return task.newListr(generateTasks);
         },
       },
     ],
@@ -423,17 +403,21 @@ export async function executeCodegen(input: CodegenContext | Types.Config): Prom
   // All the errors throw in `listr2` are collected in context
   // Running tasks doesn't throw anything
   const executedContext = await tasks.run();
-  if (config.debug) {
-    // if we have debug logs, make sure to print them before throwing the errors
-    printLogs();
-  }
 
   if (executedContext.errors.length > 0) {
-    const errors = executedContext.errors.map(subErr => subErr.message || subErr.toString());
-    const newErr = new AggregateError(executedContext.errors, String(errors.join('\n\n')));
+    const errors = executedContext.errors.map(subErr =>
+      isDetailedError(subErr)
+        ? `${subErr.message} for "${subErr.source}"${subErr.details}`
+        : subErr.message || subErr.toString()
+    );
+    const newErr = new AggregateError(executedContext.errors, `${errors.join('\n\n')}`);
     // Best-effort to all stack traces for debugging
     newErr.stack = `${newErr.stack}\n\n${executedContext.errors.map(subErr => subErr.stack).join('\n\n')}`;
     throw newErr;
+  }
+
+  if (config.debug) {
+    printLogs();
   }
 
   return result;

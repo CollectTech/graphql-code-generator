@@ -1,44 +1,33 @@
 ---
 title: typescript-oclif
-description: Generate a Typescript Oclif CLI. This plugin is based on the official Typescript plugin.
 ---
 
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNote: true })
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
-<PluginApiDocs />
+export const getStaticProps = getNpmInfo('typescript-oclif')
+
+<PackageHeader hasOperationsNote />
+<PackageApiDocs />
 
 This plugin generates [`oclif`](https://npmjs.com/package/oclif) CLI commands.
 
 Then, make sure you have `typescript` plugin as well in your configuration:
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'http://localhost:4000',
-  documents: 'src/commands/**/*.graphql',
-  generates: {
-    'src/types.ts': { plugins: ['typescript'] },
-    'src/commands/': {
-      preset: 'near-operation-file',
-      presetConfig: {
-        extension: '.ts',
-        baseTypesPath: '../types.ts'
-      },
-      plugins: [
-        {
-          'typescript-oclif': {
-            handlerPath: '../../handler'
-          }
-        }
-      ]
-    }
-  }
-}
-export default config
+```yaml
+schema: http://localhost:4000
+documents: 'src/commands/**/*.graphql'
+generates:
+  src/types.ts:
+    - typescript
+  src/commands/:
+    preset: near-operation-file
+    presetConfig:
+      extension: .ts
+      baseTypesPath: ../types.ts
+    plugins:
+      - typescript-oclif:
+          handlerPath: ../../handler
 ```
 
 ## Usage
@@ -123,31 +112,20 @@ export default handler
 First, follow the GraphQL-Code-Generator guide to install it, and make sure to also install
 `@graphql-codegen/typescript-oclif`. Then, change your `codegen.yml` file to look like this:
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: '<path-to-your-schema>',
-  documents: 'src/commands/**/*.graphql',
-  generates: {
-    'src/types.ts': { plugins: ['typescript'] },
-    'src/commands/': {
-      preset: 'near-operation-file',
-      presetConfig: {
-        extension: '.ts',
-        baseTypesPath: '../types.ts'
-      },
-      plugins: [
-        {
-          'typescript-oclif': {
-            client: '../../client'
-          }
-        }
-      ]
-    }
-  }
-}
-export default config
+```yaml
+schema: <path-to-your-schema>
+documents: 'src/commands/**/*.graphql'
+generates:
+  src/types.ts:
+    - typescript
+  src/commands/:
+    preset: near-operation-file
+    presetConfig:
+      extension: .ts
+      baseTypesPath: ../types.ts
+    plugins:
+      - typescript-oclif:
+          client: ../../client
 ```
 
 Breaking that down:

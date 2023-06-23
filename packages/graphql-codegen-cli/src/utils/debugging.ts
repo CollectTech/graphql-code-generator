@@ -13,9 +13,9 @@ export function debugLog(message: string, ...meta: any[]) {
 }
 
 export function printLogs() {
-  for (const log of queue) {
+  queue.forEach(log => {
     getLogger().info(log.message, ...log.meta);
-  }
+  });
   resetLogs();
 }
 

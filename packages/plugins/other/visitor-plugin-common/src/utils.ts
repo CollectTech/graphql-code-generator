@@ -1,32 +1,31 @@
 import {
-  FieldNode,
-  FragmentSpreadNode,
-  GraphQLInputObjectType,
-  GraphQLNamedType,
+  NameNode,
+  Kind,
+  TypeNode,
+  NamedTypeNode,
   GraphQLObjectType,
-  GraphQLOutputType,
-  GraphQLScalarType,
+  GraphQLNamedType,
+  isScalarType,
   GraphQLSchema,
+  GraphQLScalarType,
+  StringValueNode,
+  SelectionSetNode,
+  FieldNode,
+  SelectionNode,
+  FragmentSpreadNode,
   InlineFragmentNode,
-  isAbstractType,
-  isInputObjectType,
-  isListType,
   isNonNullType,
   isObjectType,
-  isScalarType,
-  Kind,
-  NamedTypeNode,
-  NameNode,
-  SelectionNode,
-  SelectionSetNode,
-  StringValueNode,
-  TypeNode,
-  DirectiveNode,
+  isListType,
+  isAbstractType,
+  GraphQLOutputType,
+  isInputObjectType,
+  GraphQLInputObjectType,
 } from 'graphql';
-import { RawConfig } from './base-visitor.js';
-import { parseMapper } from './mappers.js';
+import { ScalarsMap, NormalizedScalarsMap, ParsedScalarsMap } from './types.js';
 import { DEFAULT_SCALARS } from './scalars.js';
-import { NormalizedScalarsMap, ParsedScalarsMap, ScalarsMap, FragmentDirectives } from './types.js';
+import { parseMapper } from './mappers.js';
+import { RawConfig } from './base-visitor.js';
 
 export const getConfigValue = <T = any>(value: T, defaultValue: T): T => {
   if (value === null || value === undefined) {
@@ -53,16 +52,16 @@ export function block(array) {
 export function wrapWithSingleQuotes(value: string | number | NameNode, skipNumericCheck = false): string {
   if (skipNumericCheck) {
     if (typeof value === 'number') {
-      return String(value);
+      return `${value}`;
     }
     return `'${value}'`;
   }
 
   if (
     typeof value === 'number' ||
-    (typeof value === 'string' && !Number.isNaN(parseInt(value)) && parseFloat(value).toString() === value)
+    (typeof value === 'string' && !isNaN(parseInt(value)) && parseFloat(value).toString() === value)
   ) {
-    return String(value);
+    return `${value}`;
   }
 
   return `'${value}'`;
@@ -150,7 +149,7 @@ export class DeclarationBlock {
   }
 
   withComment(comment: string | StringValueNode | null, disabled = false): DeclarationBlock {
-    const nonEmptyComment = !!(isStringValueNode(comment) ? comment.value : comment);
+    const nonEmptyComment = isStringValueNode(comment) ? !!comment.value : !!comment;
 
     if (nonEmptyComment && !disabled) {
       this._comment = transformComment(comment, 0);
@@ -233,7 +232,7 @@ export class DeclarationBlock {
     }
 
     return stripTrailingSpaces(
-      (this._comment || '') +
+      (this._comment ? this._comment : '') +
         result +
         (this._kind === 'interface' || this._kind === 'enum' || this._kind === 'namespace' || this._kind === 'function'
           ? ''
@@ -284,26 +283,9 @@ export function buildScalars(
 ): ParsedScalarsMap {
   const result: ParsedScalarsMap = {};
 
-  function normalizeScalarType(type: string | { input: string; output: string }): { input: string; output: string } {
-    if (typeof type === 'string') {
-      return {
-        input: type,
-        output: type,
-      };
-    }
-
-    return {
-      input: type.input,
-      output: type.output,
-    };
-  }
-
-  for (const name of Object.keys(defaultScalarsMapping)) {
-    result[name] = {
-      input: parseMapper(defaultScalarsMapping[name].input),
-      output: parseMapper(defaultScalarsMapping[name].output),
-    };
-  }
+  Object.keys(defaultScalarsMapping).forEach(name => {
+    result[name] = parseMapper(defaultScalarsMapping[name]);
+  });
 
   if (schema) {
     const typeMap = schema.getTypeMap();
@@ -314,70 +296,28 @@ export function buildScalars(
       .map((scalarType: GraphQLScalarType) => {
         const { name } = scalarType;
         if (typeof scalarsMapping === 'string') {
-          const inputMapper = parseMapper(scalarsMapping + '#' + name, name);
-
-          if (inputMapper.isExternal) {
-            inputMapper.type += "['input']";
-          }
-
-          const outputMapper = parseMapper(scalarsMapping + '#' + name, name);
-          if (outputMapper.isExternal) {
-            outputMapper.type += "['output']";
-          }
-
+          const value = parseMapper(scalarsMapping + '#' + name, name);
+          result[name] = value;
+        } else if (scalarsMapping && typeof scalarsMapping[name] === 'string') {
+          const value = parseMapper(scalarsMapping[name], name);
+          result[name] = value;
+        } else if (scalarsMapping && scalarsMapping[name]) {
           result[name] = {
-            input: inputMapper,
-            output: outputMapper,
+            isExternal: false,
+            type: JSON.stringify(scalarsMapping[name]),
           };
-        } else if (scalarsMapping?.[name]) {
-          const mappedScalar = scalarsMapping[name];
-          if (typeof mappedScalar === 'string') {
-            const normalizedScalar = normalizeScalarType(scalarsMapping[name]);
-            result[name] = {
-              input: parseMapper(normalizedScalar.input, name),
-              output: parseMapper(normalizedScalar.output, name),
-            };
-          } else if (typeof mappedScalar === 'object' && mappedScalar.input && mappedScalar.output) {
-            result[name] = {
-              input: parseMapper(mappedScalar.input, name),
-              output: parseMapper(mappedScalar.output, name),
-            };
-          } else {
-            result[name] = {
-              input: {
-                isExternal: false,
-                type: JSON.stringify(mappedScalar),
-              },
-              output: {
-                isExternal: false,
-                type: JSON.stringify(mappedScalar),
-              },
-            };
-          }
         } else if (scalarType.extensions?.codegenScalarType) {
           result[name] = {
-            input: {
-              isExternal: false,
-              type: scalarType.extensions.codegenScalarType as string,
-            },
-            output: {
-              isExternal: false,
-              type: scalarType.extensions.codegenScalarType as string,
-            },
+            isExternal: false,
+            type: scalarType.extensions.codegenScalarType as string,
           };
         } else if (!defaultScalarsMapping[name]) {
           if (defaultScalarType === null) {
             throw new Error(`Unknown scalar type ${name}. Please override it using the "scalars" configuration field!`);
           }
           result[name] = {
-            input: {
-              isExternal: false,
-              type: defaultScalarType,
-            },
-            output: {
-              isExternal: false,
-              type: defaultScalarType,
-            },
+            isExternal: false,
+            type: defaultScalarType,
           };
         }
       });
@@ -385,27 +325,17 @@ export function buildScalars(
     if (typeof scalarsMapping === 'string') {
       throw new Error('Cannot use string scalars mapping when building without a schema');
     }
-    for (const name of Object.keys(scalarsMapping)) {
+    Object.keys(scalarsMapping).forEach(name => {
       if (typeof scalarsMapping[name] === 'string') {
-        const normalizedScalar = normalizeScalarType(scalarsMapping[name]);
-        result[name] = {
-          input: parseMapper(normalizedScalar.input, name),
-          output: parseMapper(normalizedScalar.output, name),
-        };
+        const value = parseMapper(scalarsMapping[name], name);
+        result[name] = value;
       } else {
-        const normalizedScalar = normalizeScalarType(scalarsMapping[name]);
         result[name] = {
-          input: {
-            isExternal: false,
-            type: JSON.stringify(normalizedScalar.input),
-          },
-          output: {
-            isExternal: false,
-            type: JSON.stringify(normalizedScalar.output),
-          },
+          isExternal: false,
+          type: JSON.stringify(scalarsMapping[name]),
         };
       }
-    }
+    });
   }
 
   return result;
@@ -478,7 +408,7 @@ export const getFieldNodeNameValue = (node: FieldNode): string => {
 };
 
 export function separateSelectionSet(selections: ReadonlyArray<SelectionNode>): {
-  fields: (FieldNode & FragmentDirectives)[];
+  fields: FieldNode[];
   spreads: FragmentSpreadNode[];
   inlines: InlineFragmentNode[];
 } {
@@ -506,11 +436,6 @@ export function getPossibleTypes(schema: GraphQLSchema, type: GraphQLNamedType):
 export function hasConditionalDirectives(field: FieldNode): boolean {
   const CONDITIONAL_DIRECTIVES = ['skip', 'include'];
   return field.directives?.some(directive => CONDITIONAL_DIRECTIVES.includes(directive.name.value));
-}
-
-export function hasIncrementalDeliveryDirectives(directives: DirectiveNode[]): boolean {
-  const INCREMENTAL_DELIVERY_DIRECTIVES = ['defer'];
-  return directives?.some(directive => INCREMENTAL_DELIVERY_DIRECTIVES.includes(directive.name.value));
 }
 
 type WrapModifiersOptions = {
@@ -598,20 +523,4 @@ export function isOneOfInputObjectType(
   isOneOfTypeCache.set(namedType, isOneOfType);
 
   return isOneOfType;
-}
-
-export function groupBy<T>(array: Array<T>, key: (item: T) => string | number): { [key: string]: Array<T> } {
-  return array.reduce<{ [key: string]: Array<T> }>((acc, item) => {
-    const group = (acc[key(item)] ??= []);
-    group.push(item);
-    return acc;
-  }, {});
-}
-
-export function flatten<T>(array: Array<Array<T>>): Array<T> {
-  return ([] as Array<T>).concat(...array);
-}
-
-export function unique<T>(array: Array<T>, key: (item: T) => string | number = item => item.toString()): Array<T> {
-  return Object.values(array.reduce((acc, item) => ({ [key(item)]: item, ...acc }), {}));
 }

@@ -1,15 +1,15 @@
 ---
 title: typescript-apollo-angular
-description: GraphQL Code Generator plugin for Angular services using Apollo Angular. It generates Angular services with observables and typed variables.
 ---
 
 import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNote: true })
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
-<PluginApiDocs />
+export const getStaticProps = getNpmInfo('typescript-apollo-angular')
+
+<PackageHeader hasOperationsNote />
+<PackageApiDocs />
 
 ## How to use?
 
@@ -26,18 +26,14 @@ query MyFeed {
 
 Using `graphql-codegen` you can generate a file with Angular services that you can use when coding an Angular component:
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  generates: {
-    'path/to/output.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typescript-apollo-angular']
-    }
-  }
-}
-export default config
+```yaml
+# …
+generates:
+  path/to/output.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-apollo-angular
 ```
 
 Then, use it:

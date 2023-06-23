@@ -1,15 +1,17 @@
 import {
-  AddToSchemaResult,
-  createNoopProfiler,
+  DetailedError,
+  Types,
+  isComplexPluginOutput,
   federationSpec,
   getCachedDocumentNodeFromSchema,
-  isComplexPluginOutput,
-  Types,
+  AddToSchemaResult,
+  createNoopProfiler,
 } from '@graphql-codegen/plugin-helpers';
-import { mergeSchemas } from '@graphql-tools/schema';
-import { asArray, Source, validateGraphQlDocuments } from '@graphql-tools/utils';
-import { DefinitionNode, DocumentNode, Kind, NameNode, print, specifiedRules, visit } from 'graphql';
+import { visit, DefinitionNode, Kind, print, NameNode, specifiedRules, DocumentNode } from 'graphql';
 import { executePlugin } from './execute-plugin.js';
+import { checkValidationErrors, validateGraphQlDocuments, Source, asArray } from '@graphql-tools/utils';
+
+import { mergeSchemas } from '@graphql-tools/schema';
 import {
   extractHashFromSchema,
   getSkipDocumentsValidationOption,
@@ -19,7 +21,6 @@ import {
   shouldValidateDocumentsAgainstSchema,
   shouldValidateDuplicateDocuments,
 } from './utils.js';
-import { transformDocuments } from './transform-document.js';
 
 export async function codegen(options: Types.GenerateOptions): Promise<string> {
   const documents = options.documents || [];
@@ -72,20 +73,7 @@ export async function codegen(options: Types.GenerateOptions): Promise<string> {
   const schemaDocumentNode =
     mergeNeeded || !options.schema ? getCachedDocumentNodeFromSchema(schemaInstance) : options.schema;
 
-  const documentTransforms = Array.isArray(options.documentTransforms) ? options.documentTransforms : [];
-  const transformedDocuments = await transformDocuments({
-    ...options,
-    documentTransforms,
-    schema: schemaDocumentNode,
-    schemaAst: schemaInstance,
-    profiler,
-  });
-
-  if (
-    schemaInstance &&
-    transformedDocuments.length > 0 &&
-    shouldValidateDocumentsAgainstSchema(skipDocumentsValidation)
-  ) {
+  if (schemaInstance && documents.length > 0 && shouldValidateDocumentsAgainstSchema(skipDocumentsValidation)) {
     const ignored = ['NoUnusedFragments', 'NoUnusedVariables', 'KnownDirectives'];
     if (typeof skipDocumentsValidation === 'object' && skipDocumentsValidation.ignoreRules) {
       ignored.push(...asArray(skipDocumentsValidation.ignoreRules));
@@ -101,38 +89,20 @@ export async function codegen(options: Types.GenerateOptions): Promise<string> {
       const rules = specifiedRules.filter(rule => !ignored.some(ignoredRule => rule.name.startsWith(ignoredRule)));
       const schemaHash = extractHashFromSchema(schemaInstance);
 
-      if (!schemaHash || !options.cache || transformedDocuments.some(d => typeof d.hash !== 'string')) {
-        return Promise.resolve(
-          validateGraphQlDocuments(
-            schemaInstance,
-            [...transformedDocuments.flatMap(d => d.document), ...fragments.flatMap(f => f.document)],
-            rules
-          )
-        );
+      if (!schemaHash || !options.cache || documents.some(d => typeof d.hash !== 'string')) {
+        return validateGraphQlDocuments(schemaInstance, [...documents, ...fragments], rules);
       }
 
       const cacheKey = [schemaHash]
-        .concat(transformedDocuments.map(doc => doc.hash))
+        .concat(documents.map(doc => doc.hash))
         .concat(JSON.stringify(fragments))
         .join(',');
 
       return options.cache('documents-validation', cacheKey, () =>
-        Promise.resolve(
-          validateGraphQlDocuments(
-            schemaInstance,
-            [...transformedDocuments.flatMap(d => d.document), ...fragments.flatMap(f => f.document)],
-            rules
-          )
-        )
+        validateGraphQlDocuments(schemaInstance, [...documents, ...fragments], rules)
       );
     }, 'Validate documents against schema');
-
-    if (errors.length > 0) {
-      throw new Error(
-        `GraphQL Document Validation failed with ${errors.length} errors;
-  ${errors.map((error, index) => `Error ${index}: ${error.stack}`).join('\n\n')}`
-      );
-    }
+    checkValidationErrors(errors);
   }
 
   const prepend: Set<string> = new Set<string>();
@@ -144,7 +114,13 @@ export async function codegen(options: Types.GenerateOptions): Promise<string> {
       const pluginPackage = options.pluginMap[name];
       const pluginConfig = plugin[name] || {};
 
-      const execConfig = typeof pluginConfig === 'object' ? { ...options.config, ...pluginConfig } : pluginConfig;
+      const execConfig =
+        typeof pluginConfig !== 'object'
+          ? pluginConfig
+          : {
+              ...options.config,
+              ...pluginConfig,
+            };
 
       const result = await profiler.run(
         () =>
@@ -155,7 +131,7 @@ export async function codegen(options: Types.GenerateOptions): Promise<string> {
               parentConfig: options.config,
               schema: schemaDocumentNode,
               schemaAst: schemaInstance,
-              documents: transformedDocuments,
+              documents: options.documents,
               outputFilename: options.filename,
               allPlugins: options.plugins,
               skipDocumentsValidation: options.skipDocumentsValidation,
@@ -244,11 +220,15 @@ function validateDuplicateDocuments(files: Types.DocumentFile[]) {
     deduplicatedDefinitions: Set<DefinitionNode>
   ) {
     if (typeof node.name !== 'undefined') {
-      definitionMap[node.kind] ||= {};
-      definitionMap[node.kind][node.name.value] ||= {
-        paths: new Set(),
-        contents: new Set(),
-      };
+      if (!definitionMap[node.kind]) {
+        definitionMap[node.kind] = {};
+      }
+      if (!definitionMap[node.kind][node.name.value]) {
+        definitionMap[node.kind][node.name.value] = {
+          paths: new Set(),
+          contents: new Set(),
+        };
+      }
 
       const definitionKindMap = definitionMap[node.kind];
 
@@ -262,7 +242,7 @@ function validateDuplicateDocuments(files: Types.DocumentFile[]) {
     return deduplicatedDefinitions.add(node);
   }
 
-  for (const file of files) {
+  files.forEach(file => {
     const deduplicatedDefinitions = new Set<DefinitionNode>();
     visit(file.document, {
       OperationDefinition(node) {
@@ -273,18 +253,18 @@ function validateDuplicateDocuments(files: Types.DocumentFile[]) {
       },
     });
     (file.document as any).definitions = Array.from(deduplicatedDefinitions);
-  }
+  });
 
   const kinds = Object.keys(definitionMap);
 
-  for (const kind of kinds) {
+  kinds.forEach(kind => {
     const definitionKindMap = definitionMap[kind];
     const names = Object.keys(definitionKindMap);
     if (names.length) {
       const duplicated = names.filter(name => definitionKindMap[name].contents.size > 1);
 
       if (!duplicated.length) {
-        continue;
+        return;
       }
 
       const list = duplicated
@@ -295,19 +275,21 @@ function validateDuplicateDocuments(files: Types.DocumentFile[]) {
             .map(filepath => {
               return `
               - ${filepath}
-            `.trimEnd();
+            `.trimRight();
             })
             .join('')}
-    `.trimEnd()
+    `.trimRight()
         )
         .join('');
 
       const definitionKindName = kind.replace('Definition', '').toLowerCase();
-      throw new Error(
-        `Not all ${definitionKindName}s have an unique name: ${duplicated.join(', ')}: \n
+      throw new DetailedError(
+        `Not all ${definitionKindName}s have an unique name: ${duplicated.join(', ')}`,
+        `
+          Not all ${definitionKindName}s have an unique name
           ${list}
         `
       );
     }
-  }
+  });
 }

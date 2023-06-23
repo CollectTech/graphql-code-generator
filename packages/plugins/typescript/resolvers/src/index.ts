@@ -1,14 +1,14 @@
+import { parseMapper } from '@graphql-codegen/visitor-plugin-common';
 import {
+  Types,
+  PluginFunction,
   addFederationReferencesToSchema,
   getCachedDocumentNodeFromSchema,
   oldVisit,
-  PluginFunction,
-  Types,
 } from '@graphql-codegen/plugin-helpers';
-import { parseMapper } from '@graphql-codegen/visitor-plugin-common';
 import { GraphQLSchema } from 'graphql';
-import { TypeScriptResolversPluginConfig } from './config.js';
 import { TypeScriptResolversVisitor } from './visitor.js';
+import { TypeScriptResolversPluginConfig } from './config.js';
 
 const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -55,7 +55,7 @@ export type Resolver${capitalizedDirectiveName}WithResolve<TResult, TParent, TCo
         } else {
           prepend.push(
             `${importType} { ${parsedMapper.import} ${
-              parsedMapper.import === resolverFnName ? '' : `as ${resolverFnName} `
+              parsedMapper.import !== resolverFnName ? `as ${resolverFnName} ` : ''
             }} from '${parsedMapper.source}';`
           );
         }
@@ -67,7 +67,8 @@ export type Resolver${capitalizedDirectiveName}WithResolve<TResult, TParent, TCo
       if (config.makeResolverTypeCallable) {
         defsToInclude.push(`${resolverType} ${resolverFnUsage};`);
       } else {
-        defsToInclude.push(resolverWithResolve, `${resolverType} ${resolverFnUsage} | ${resolverWithResolveUsage};`);
+        defsToInclude.push(resolverWithResolve);
+        defsToInclude.push(`${resolverType} ${resolverFnUsage} | ${resolverWithResolveUsage};`);
       }
 
       directiveResolverMappings[directiveName] = resolverTypeName;
@@ -112,19 +113,18 @@ export type ResolverWithResolve<TResult, TParent, TContext, TArgs> = {
       };`);
     }
 
-    defsToInclude.push(
-      `export type ReferenceResolver<TResult, TReference, TContext> = (
+    defsToInclude.push(`export type ReferenceResolver<TResult, TReference, TContext> = (
       reference: TReference,
       context: TContext,
       info${optionalSignForInfoArg}: GraphQLResolveInfo
-    ) => Promise<TResult> | TResult;`,
-      `
+    ) => Promise<TResult> | TResult;`);
+
+    defsToInclude.push(`
       type ScalarCheck<T, S> = S extends true ? T : NullableCheck<T, S>;
       type NullableCheck<T, S> = ${namespacedImportPrefix}Maybe<T> extends T ? ${namespacedImportPrefix}Maybe<ListCheck<NonNullable<T>, S>> : ListCheck<T, S>;
       type ListCheck<T, S> = T extends (infer U)[] ? NullableCheck<U, S>[] : GraphQLRecursivePick<T, S>;
       export type GraphQLRecursivePick<T, S> = { [K in keyof T & keyof S]: ScalarCheck<T[K], S[K]> };
-    `
-    );
+    `);
   }
 
   if (!config.makeResolverTypeCallable) {
@@ -166,7 +166,7 @@ export type ResolverWithResolve<TResult, TParent, TContext, TArgs> = {
       } else {
         prepend.push(
           `${importType} { ${parsedMapper.import} ${
-            parsedMapper.import === 'ResolverFn' ? '' : 'as ResolverFn '
+            parsedMapper.import !== 'ResolverFn' ? 'as ResolverFn ' : ''
           }} from '${parsedMapper.source}';`
         );
       }
@@ -245,8 +245,6 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
   const resolversTypeMapping = visitor.buildResolversTypes();
   const resolversParentTypeMapping = visitor.buildResolversParentTypes();
-  const resolversUnionTypesMapping = visitor.buildResolversUnionTypes();
-  const resolversInterfaceTypesMapping = visitor.buildResolversInterfaceTypes();
   const { getRootResolver, getAllDirectiveResolvers, mappersImports, unusedMappers, hasScalars } = visitor;
 
   if (hasScalars()) {
@@ -266,11 +264,11 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
     const parsedMapper = parseMapper(config.customResolveInfo);
     if (parsedMapper.isExternal) {
       if (parsedMapper.default) {
-        prepend.push(`${importType} GraphQLResolveInfo from '${parsedMapper.source}'`);
+        prepend.push(`import GraphQLResolveInfo from '${parsedMapper.source}'`);
       }
       prepend.push(
-        `${importType} { ${parsedMapper.import} ${
-          parsedMapper.import === 'GraphQLResolveInfo' ? '' : 'as GraphQLResolveInfo'
+        `import { ${parsedMapper.import} ${
+          parsedMapper.import !== 'GraphQLResolveInfo' ? 'as GraphQLResolveInfo' : ''
         } } from '${parsedMapper.source}';`
       );
     } else {
@@ -284,8 +282,6 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
     prepend,
     content: [
       header,
-      resolversUnionTypesMapping,
-      resolversInterfaceTypesMapping,
       resolversTypeMapping,
       resolversParentTypeMapping,
       ...visitorResult.definitions.filter(d => typeof d === 'string'),
@@ -295,4 +291,4 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
   };
 };
 
-export { TypeScriptResolversPluginConfig, TypeScriptResolversVisitor };
+export { TypeScriptResolversVisitor, TypeScriptResolversPluginConfig };

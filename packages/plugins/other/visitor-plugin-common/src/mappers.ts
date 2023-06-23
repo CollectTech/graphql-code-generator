@@ -1,5 +1,5 @@
 /* eslint-disable no-inner-declarations */
-import { ParsedResolversConfig, RawResolversConfig } from './base-resolvers-visitor.js';
+import { RawResolversConfig, ParsedResolversConfig } from './base-resolvers-visitor.js';
 import { DirectiveArgumentAndInputFieldMappings, ParsedDirectiveArgumentAndInputFieldMappings } from './types.js';
 
 export type ParsedMapper = InternalParsedMapper | ExternalParsedMapper;
@@ -114,7 +114,7 @@ export function parseMapper(mapper: string, gqlTypeName: string | null = null, s
             return handleAlias(true);
           }
 
-          const type = maybeSuffix(String(gqlTypeName));
+          const type = maybeSuffix(`${gqlTypeName}`);
 
           // ./my/module#default
           return {
@@ -177,11 +177,11 @@ export function transformMappers(
 ): ParsedResolversConfig['mappers'] {
   const result: ParsedResolversConfig['mappers'] = {};
 
-  for (const gqlTypeName of Object.keys(rawMappers)) {
+  Object.keys(rawMappers).forEach(gqlTypeName => {
     const mapperDef = rawMappers[gqlTypeName];
     const parsedMapper = parseMapper(mapperDef, gqlTypeName, mapperTypeSuffix);
     result[gqlTypeName] = parsedMapper;
-  }
+  });
 
   return result;
 }
@@ -192,11 +192,11 @@ export function transformDirectiveArgumentAndInputFieldMappings(
 ): ParsedDirectiveArgumentAndInputFieldMappings {
   const result: ParsedDirectiveArgumentAndInputFieldMappings = {};
 
-  for (const directive of Object.keys(rawDirectiveArgumentAndInputFieldMappings)) {
+  Object.keys(rawDirectiveArgumentAndInputFieldMappings).forEach(directive => {
     const mapperDef = rawDirectiveArgumentAndInputFieldMappings[directive];
     const parsedMapper = parseMapper(mapperDef, directive, directiveArgumentAndInputFieldMappingTypeSuffix);
     result[directive] = parsedMapper;
-  }
+  });
 
   return result;
 }

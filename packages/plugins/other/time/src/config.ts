@@ -4,22 +4,12 @@ export interface TimePluginConfig {
    * @default YYYY-MM-DDTHH:mm:ssZ
    *
    * @exampleMarkdown
-   * ```tsx {10} filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    schema: 'https://localhost:4000/graphql',
-   *    documents: ['src/**\/*.tsx'],
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['time'],
-   *        config: {
-   *          format: 'DD.MM.YY'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {4-5}
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - time:
+   *           format: DD.MM.YY
    * ```
    */
   format?: string;
@@ -28,22 +18,12 @@ export interface TimePluginConfig {
    * @default 'Generated on'
    *
    * @exampleMarkdown
-   * ```tsx {10} filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    schema: 'https://localhost:4000/graphql',
-   *    documents: ['src/**\/*.tsx'],
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['time'],
-   *        config: {
-   *          message: 'The file generated on: '
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {4-5}
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - time:
+   *           message: 'The file generated on: '
    * ```
    */
   message?: string;

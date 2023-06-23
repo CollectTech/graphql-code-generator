@@ -1,11 +1,11 @@
-import { GraphQLList, GraphQLNamedType, GraphQLNonNull, GraphQLOutputType, isListType, isNonNullType } from 'graphql';
+import { GraphQLOutputType, GraphQLNamedType, GraphQLNonNull, GraphQLList, isListType, isNonNullType } from 'graphql';
 import { Types } from './types.js';
 
 export function mergeOutputs(content: Types.PluginOutput | Array<Types.PluginOutput>): string {
   const result: Types.ComplexPluginOutput = { content: '', prepend: [], append: [] };
 
   if (Array.isArray(content)) {
-    for (const item of content) {
+    content.forEach(item => {
       if (typeof item === 'string') {
         result.content += item;
       } else {
@@ -13,7 +13,7 @@ export function mergeOutputs(content: Types.PluginOutput | Array<Types.PluginOut
         result.prepend.push(...(item.prepend || []));
         result.append.push(...(item.append || []));
       }
-    }
+    });
   }
 
   return [...result.prepend, result.content, ...result.append].join('\n');

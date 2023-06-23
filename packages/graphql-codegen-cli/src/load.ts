@@ -1,19 +1,19 @@
-import { extname, join } from 'path';
-import { Types } from '@graphql-codegen/plugin-helpers';
-import { ApolloEngineLoader } from '@graphql-tools/apollo-engine-loader';
+import {
+  loadSchema as loadSchemaToolkit,
+  loadDocuments as loadDocumentsToolkit,
+  UnnormalizedTypeDefPointer,
+} from '@graphql-tools/load';
+import { DetailedError, Types } from '@graphql-codegen/plugin-helpers';
+import { GraphQLSchema } from 'graphql';
 import { CodeFileLoader } from '@graphql-tools/code-file-loader';
 import { GitLoader } from '@graphql-tools/git-loader';
 import { GithubLoader } from '@graphql-tools/github-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { JsonFileLoader } from '@graphql-tools/json-file-loader';
-import {
-  loadDocuments as loadDocumentsToolkit,
-  loadSchema as loadSchemaToolkit,
-  UnnormalizedTypeDefPointer,
-} from '@graphql-tools/load';
-import { PrismaLoader } from '@graphql-tools/prisma-loader';
 import { UrlLoader } from '@graphql-tools/url-loader';
-import { GraphQLSchema } from 'graphql';
+import { ApolloEngineLoader } from '@graphql-tools/apollo-engine-loader';
+import { PrismaLoader } from '@graphql-tools/prisma-loader';
+import { join, extname } from 'path';
 
 export const defaultSchemaLoadOptions = {
   assumeValidSDL: true,
@@ -51,7 +51,8 @@ export async function loadSchema(
     });
     return schema;
   } catch (e) {
-    throw new Error(
+    throw new DetailedError(
+      'Failed to load schema',
       `
         Failed to load schema from ${Object.keys(schemaPointers).join(',')}:
 

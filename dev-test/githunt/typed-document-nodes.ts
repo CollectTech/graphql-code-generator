@@ -4,59 +4,57 @@ export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
-export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string };
-  String: { input: string; output: string };
-  Boolean: { input: boolean; output: boolean };
-  Int: { input: number; output: number };
-  Float: { input: number; output: number };
+  ID: string;
+  String: string;
+  Boolean: boolean;
+  Int: number;
+  Float: number;
 };
 
 /** A comment about an entry, submitted by a user */
 export type Comment = {
   __typename?: 'Comment';
   /** The text of the comment */
-  content: Scalars['String']['output'];
+  content: Scalars['String'];
   /** A timestamp of when the comment was posted */
-  createdAt: Scalars['Float']['output'];
+  createdAt: Scalars['Float'];
   /** The SQL ID of this entry */
-  id: Scalars['Int']['output'];
+  id: Scalars['Int'];
   /** The GitHub user who posted the comment */
   postedBy: User;
   /** The repository which this comment is about */
-  repoName: Scalars['String']['output'];
+  repoName: Scalars['String'];
 };
 
 /** Information about a GitHub repository submitted to GitHunt */
 export type Entry = {
   __typename?: 'Entry';
   /** The number of comments posted about this repository */
-  commentCount: Scalars['Int']['output'];
+  commentCount: Scalars['Int'];
   /** Comments posted about this repository */
   comments: Array<Maybe<Comment>>;
   /** A timestamp of when the entry was submitted */
-  createdAt: Scalars['Float']['output'];
+  createdAt: Scalars['Float'];
   /** The hot score of this repository */
-  hotScore: Scalars['Float']['output'];
+  hotScore: Scalars['Float'];
   /** The SQL ID of this entry */
-  id: Scalars['Int']['output'];
+  id: Scalars['Int'];
   /** The GitHub user who submitted this entry */
   postedBy: User;
   /** Information about the repository from GitHub */
   repository: Repository;
   /** The score of this repository, upvotes - downvotes */
-  score: Scalars['Int']['output'];
+  score: Scalars['Int'];
   /** XXX to be changed */
   vote: Vote;
 };
 
 /** Information about a GitHub repository submitted to GitHunt */
 export type EntryCommentsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
 };
 
 /** A list of options for the sort order of the feed */
@@ -80,16 +78,16 @@ export type Mutation = {
 };
 
 export type MutationSubmitCommentArgs = {
-  commentContent: Scalars['String']['input'];
-  repoFullName: Scalars['String']['input'];
+  commentContent: Scalars['String'];
+  repoFullName: Scalars['String'];
 };
 
 export type MutationSubmitRepositoryArgs = {
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 };
 
 export type MutationVoteArgs = {
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
   type: VoteType;
 };
 
@@ -104,12 +102,12 @@ export type Query = {
 };
 
 export type QueryEntryArgs = {
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 };
 
 export type QueryFeedArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
   type: FeedType;
 };
 
@@ -120,19 +118,19 @@ export type QueryFeedArgs = {
 export type Repository = {
   __typename?: 'Repository';
   /** The description of the repository */
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']>;
   /** The full name of the repository with the username, e.g. apollostack/GitHunt-API */
-  full_name: Scalars['String']['output'];
+  full_name: Scalars['String'];
   /** The link to the repository on GitHub */
-  html_url: Scalars['String']['output'];
+  html_url: Scalars['String'];
   /** Just the name of the repository, e.g. GitHunt-API */
-  name: Scalars['String']['output'];
+  name: Scalars['String'];
   /** The number of open issues on this repository on GitHub */
-  open_issues_count?: Maybe<Scalars['Int']['output']>;
+  open_issues_count?: Maybe<Scalars['Int']>;
   /** The owner of this repository on GitHub, e.g. apollostack */
   owner?: Maybe<User>;
   /** The number of people who have starred this repository on GitHub */
-  stargazers_count: Scalars['Int']['output'];
+  stargazers_count: Scalars['Int'];
 };
 
 export type Subscription = {
@@ -142,24 +140,24 @@ export type Subscription = {
 };
 
 export type SubscriptionCommentAddedArgs = {
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 };
 
 /** A user object from the GitHub API. This uses the exact field names returned from the GitHub API. */
 export type User = {
   __typename?: 'User';
   /** The URL to a directly embeddable image for this user's avatar */
-  avatar_url: Scalars['String']['output'];
+  avatar_url: Scalars['String'];
   /** The URL of this user's GitHub page */
-  html_url: Scalars['String']['output'];
+  html_url: Scalars['String'];
   /** The name of the user, e.g. apollostack */
-  login: Scalars['String']['output'];
+  login: Scalars['String'];
 };
 
 /** XXX to be removed */
 export type Vote = {
   __typename?: 'Vote';
-  vote_value: Scalars['Int']['output'];
+  vote_value: Scalars['Int'];
 };
 
 /** The type of vote to record, when submitting a vote */
@@ -170,7 +168,7 @@ export enum VoteType {
 }
 
 export type OnCommentAddedSubscriptionVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 }>;
 
 export type OnCommentAddedSubscription = {
@@ -185,9 +183,9 @@ export type OnCommentAddedSubscription = {
 };
 
 export type CommentQueryVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  repoFullName: Scalars['String'];
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
 }>;
 
 export type CommentQuery = {
@@ -253,8 +251,8 @@ export type FeedEntryFragment = {
 
 export type FeedQueryVariables = Exact<{
   type: FeedType;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  limit?: InputMaybe<Scalars['Int']>;
 }>;
 
 export type FeedQuery = {
@@ -281,7 +279,7 @@ export type FeedQuery = {
 };
 
 export type SubmitRepositoryMutationVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 }>;
 
 export type SubmitRepositoryMutation = {
@@ -302,8 +300,8 @@ export type RepoInfoFragment = {
 };
 
 export type SubmitCommentMutationVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
-  commentContent: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
+  commentContent: Scalars['String'];
 }>;
 
 export type SubmitCommentMutation = {
@@ -324,7 +322,7 @@ export type VoteButtonsFragment = {
 };
 
 export type VoteMutationVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
   type: VoteType;
 }>;
 
@@ -461,59 +459,8 @@ export const FeedEntryFragmentDoc = {
         ],
       },
     },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'VoteButtons' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Entry' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'score' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'vote' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'vote_value' } }],
-            },
-          },
-        ],
-      },
-    },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'RepoInfo' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Entry' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'repository' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'stargazers_count' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'open_issues_count' } },
-              ],
-            },
-          },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'postedBy' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'html_url' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'login' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
+    ...VoteButtonsFragmentDoc.definitions,
+    ...RepoInfoFragmentDoc.definitions,
   ],
 } as unknown as DocumentNode<FeedEntryFragment, unknown>;
 export const OnCommentAddedDocument = {
@@ -682,30 +629,7 @@ export const CommentDocument = {
         ],
       },
     },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'CommentsPageComment' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Comment' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'postedBy' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'login' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'html_url' } },
-              ],
-            },
-          },
-          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'content' } },
-        ],
-      },
-    },
+    ...CommentsPageCommentFragmentDoc.definitions,
   ],
 } as unknown as DocumentNode<CommentQuery, CommentQueryVariables>;
 export const CurrentUserForProfileDocument = {
@@ -797,92 +721,7 @@ export const FeedDocument = {
         ],
       },
     },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'VoteButtons' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Entry' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'score' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'vote' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'vote_value' } }],
-            },
-          },
-        ],
-      },
-    },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'RepoInfo' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Entry' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'repository' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'stargazers_count' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'open_issues_count' } },
-              ],
-            },
-          },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'postedBy' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'html_url' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'login' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'FeedEntry' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Entry' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'commentCount' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'repository' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'full_name' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'html_url' } },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'owner' },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [{ kind: 'Field', name: { kind: 'Name', value: 'avatar_url' } }],
-                  },
-                },
-              ],
-            },
-          },
-          { kind: 'FragmentSpread', name: { kind: 'Name', value: 'VoteButtons' } },
-          { kind: 'FragmentSpread', name: { kind: 'Name', value: 'RepoInfo' } },
-        ],
-      },
-    },
+    ...FeedEntryFragmentDoc.definitions,
   ],
 } as unknown as DocumentNode<FeedQuery, FeedQueryVariables>;
 export const SubmitRepositoryDocument = {
@@ -967,30 +806,7 @@ export const SubmitCommentDocument = {
         ],
       },
     },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'CommentsPageComment' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Comment' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'postedBy' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'login' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'html_url' } },
-              ],
-            },
-          },
-          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'content' } },
-        ],
-      },
-    },
+    ...CommentsPageCommentFragmentDoc.definitions,
   ],
 } as unknown as DocumentNode<SubmitCommentMutation, SubmitCommentMutationVariables>;
 export const VoteDocument = {

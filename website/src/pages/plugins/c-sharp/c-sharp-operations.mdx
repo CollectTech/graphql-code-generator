@@ -1,13 +1,13 @@
 ---
 title: c-sharp-operations
-description: C# operations plugin. Generates C# methods for the resolvers' signature. Works with GraphQL.
 ---
 
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNote: true })
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('c-sharp-operations')
+
+<PackageHeader hasOperationsNote />
 
 The `c-sharp-operations` plugin generates C# methods for the resolvers' signature.
 
@@ -24,4 +24,4 @@ using GraphQL.Client.Serializer.Newtonsoft;
   var response = await client.SendQueryAsync<Types.Query>(UsersGQL.Request());
 ```
 
-<PluginApiDocs />
+<PackageApiDocs />

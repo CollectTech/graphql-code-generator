@@ -1,25 +1,35 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { XMLParser } from 'fast-xml-parser';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import config from '../next.config.mjs';
 
-const parser = new XMLParser();
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const sitemapPath = path.join(process.cwd(), 'public', 'sitemap.xml');
-const { urlset } = parser.parse(await fs.readFile(sitemapPath, 'utf8'));
+const sitemapPath = path.join(__dirname, '..', 'public', 'sitemap-0.xml');
+const lockfilePath = path.join(__dirname, '..', 'route-lockfile.txt');
 
-const routes = urlset.url.map(url => new URL(url.loc).pathname);
-const redirectsPointingToNonExistingStuff = [];
+async function main() {
+  const parser = new XMLParser();
 
-const redirects = await config.redirects();
+  const d = parser.parse(fs.readFileSync(sitemapPath, 'utf-8'));
 
-for (const redirect of redirects) {
-  if (routes.includes(redirect.destination)) {
-    routes.push(`${redirect.source} -> ${redirect.destination}`);
-  } else {
-    redirectsPointingToNonExistingStuff.push(redirect);
+  const routes = d.urlset.url.map(url => url.loc.replace(`https://www.graphql-code-generator.com`, ``));
+
+  const redirectsPointingToNonExistingStuff = [];
+
+  const redirects = await config.redirects();
+
+  for (const redirect of redirects) {
+    if (routes.includes(redirect.destination) === false) {
+      redirectsPointingToNonExistingStuff.push(redirect);
+    } else {
+      routes.push(`${redirect.source} -> ${redirect.destination}`);
+    }
   }
+
+  fs.writeFileSync(lockfilePath, routes.sort().join(`\n`) + `\n`);
 }
 
-const lockfilePath = path.join(process.cwd(), 'route-lockfile.txt');
-await fs.writeFile(lockfilePath, routes.sort().join('\n') + '\n');
+main();

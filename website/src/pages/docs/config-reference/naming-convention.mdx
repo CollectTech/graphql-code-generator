@@ -1,7 +1,3 @@
----
-description: 'GraphQL Code Generator is a tool for generating code from GraphQL schema and operations.'
----
-
 # Naming Convention
 
 GraphQL Code Generation provides a `namingConvention` option to control the naming convention of the different code elements generated (types, enum values, …).
@@ -24,64 +20,34 @@ Additionally, you can set `transformUnderscore` to `true` if you want to overrid
 
 ##### Override All Names
 
-```ts {5}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  config: { namingConvention: 'change-case-all#lowerCase' }
-  // ...
-}
-export default config
+```yaml
+config:
+  namingConvention: change-case-all#lowerCase
 ```
 
 ##### Upper-case enum values
 
-```ts {6-9}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  config: {
-    namingConvention: {
-      typeNames: 'change-case-all#pascalCase',
-      enumValues: 'change-case-all#upperCase'
-    }
-  }
-  // ...
-}
-export default config
+```yaml
+config:
+  namingConvention:
+    typeNames: change-case-all#pascalCase
+    enumValues: change-case-all#upperCase
 ```
 
 ##### Keep names as is
 
-```ts {5}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  config: { namingConvention: 'keep' }
-  // ...
-}
-export default config
+```yaml
+config:
+  namingConvention: keep
 ```
 
 ##### Remove Underscores
 
-```ts {6-9}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  config: {
-    namingConvention: {
-      typeNames: 'change-case-all#pascalCase',
-      transformUnderscore: true
-    }
-  }
-  // ...
-}
-export default config
+```yaml
+config:
+  namingConvention:
+    typeNames: change-case-all#pascalCase
+    transformUnderscore: true
 ```
 
 #### Using external modules
@@ -99,15 +65,9 @@ package-name#export-you-want-to-use
 
 For example, if you want to use `camelCase` from lodash, given that you have it already installed, you will do it like this:
 
-```ts {5}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  config: { namingConvention: 'lodash#camelCase' }
-  // ...
-}
-export default config
+```yaml
+config:
+  namingConvention: lodash#camelCase
 ```
 
 #### Providing your own naming function
@@ -141,31 +101,16 @@ module.exports = FixedConstantCase
 
 Then, just provide the path to your custom naming module in the configuration:
 
-```ts {5}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  config: { namingConvention: './my-naming-fn' }
-  // ...
-}
-export default config
+```yaml
+config:
+  namingConvention: ./my-naming-fn
 ```
 
 This also applies when you want a specific custom naming convention per output.
 Specify your custom naming function on the output or outputs you want to apply:
 
-```ts {6-8}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  config: {
-    namingConvention: {
-      typeNames: './my-naming-fn'
-    }
-  }
-  // ...
-}
-export default config
+```yaml
+config:
+  namingConvention:
+    typeNames: ./my-naming-fn
 ```

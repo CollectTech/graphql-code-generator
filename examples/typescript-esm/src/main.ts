@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import { executeOperation } from './executeOperation.js';
-import { graphql } from './gql/index.js';
+import { gql } from './gql/index.js';
 
-const AllPeopleQueryDocument = graphql(/* GraphQL */ `
+const AllPeopleQueryDocument = gql(/* GraphQL */ `
   query AllPeopleQuery {
     allPeople(first: 5) {
       edges {
@@ -17,7 +17,7 @@ const AllPeopleQueryDocument = graphql(/* GraphQL */ `
   }
 `);
 
-const AllPeopleWithVariablesQueryDocument = graphql(/* GraphQL */ `
+const AllPeopleWithVariablesQueryDocument = gql(/* GraphQL */ `
   query AllPeopleWithVariablesQuery($first: Int!) {
     allPeople(first: $first) {
       edges {
@@ -35,19 +35,9 @@ const AllPeopleWithVariablesQueryDocument = graphql(/* GraphQL */ `
 const apiUrl = 'https://swapi-graphql.netlify.app/.netlify/functions/index';
 
 executeOperation(apiUrl, AllPeopleQueryDocument).then(res => {
-  if (res.errors) {
-    console.error(res.errors);
-    process.exit(1);
-  }
-
   console.log(res.data?.allPeople.edges);
 });
 
 executeOperation(apiUrl, AllPeopleWithVariablesQueryDocument, { first: 10 }).then(res => {
-  if (res.errors) {
-    console.error(res.errors);
-    process.exit(1);
-  }
-
   console.log(res.data?.allPeople.edges);
 });

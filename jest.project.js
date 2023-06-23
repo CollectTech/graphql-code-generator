@@ -1,6 +1,5 @@
 const { resolve } = require('path');
-// eslint-disable-next-line import/no-extraneous-dependencies -- false positive
-const { pathsToModuleNameMapper } = require('ts-jest');
+const { pathsToModuleNameMapper } = require('ts-jest/utils');
 
 const ROOT_DIR = __dirname;
 const TSCONFIG = resolve(ROOT_DIR, 'tsconfig.json');
@@ -22,10 +21,7 @@ module.exports = ({ dirname, projectMode = true }) => {
     cacheDirectory: resolve(ROOT_DIR, `${CI ? '' : 'node_modules/'}.cache/jest`),
     setupFiles: [`${ROOT_DIR}/dev-test/setup.js`],
     collectCoverage: false,
-    testTimeout: 20_000,
-    resolver: './node_modules/bob-the-bundler/jest-resolver.cjs',
-    snapshotFormat: {
-      escapeString: false,
-    },
+    testTimeout: 20000,
+    resolver: 'bob-the-bundler/jest-resolver.js',
   };
 };

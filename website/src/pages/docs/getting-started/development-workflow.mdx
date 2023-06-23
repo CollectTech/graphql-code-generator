@@ -1,7 +1,3 @@
----
-description: How to integrate GraphQL Code Generator into your development workflow. Learn how to run it in watch mode, or as part of your CI flow.
----
-
 # Development workflow
 
 GraphQL Code Generator should be integrated as part of your development workflow.
@@ -51,18 +47,14 @@ yarn graphql-codegen --watch "src/**/*.js"
 
 Use this when you are loading your schema or documents from a single code file that depends on other files internally because codegen can't tell that you're using those files automatically.
 
-We use [`@parcel/watcher`](https://github.com/parcel-bundler/watcher) which supports subscribing to realtime notifications of changes in a directory. It works recursively, so changes in sub-directories will also be emitted.
+By default, watch mode uses the system's native support to listen for file change events. This can be configured in the settings file to use a stat polling method instead of in unusual cases where system support is unavailable.
 
-```ts {6-10}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'http://localhost:4000/graphql',
-  // ...
-  watch: true
-}
-
-export default config
+```yaml
+watch: true
+# Passed directly through to chokidar's file watch configuration
+watchConfig:
+  usePolling: true
+  interval: 1000
 ```
 
 ## Monorepo and Yarn Workspaces
@@ -71,29 +63,14 @@ If you are using a monorepo structure, with tools such as [Yarn Workspaces](http
 
 If you need to execute the codegen multiple times, note that you can specify multiple fields for `generates` field, for example:
 
-```ts {7-8}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'server/src/**/*.graphql',
-  documents: 'client/src/**/*.graphql',
-  generates: {
-    'client/src/models.ts': ['typescript', 'typescript-operations'],
-    'server/src/models.ts': ['typescript', 'typescript-resolver']
-  }
-}
-
-export default config
+```yaml {4,7}
+schema: 'server/src/**/*.graphql'
+documents: 'client/src/**/*.graphql'
+generates:
+  client/src/models.ts:
+    - typescript
+    - typescript-operations
+  server/src/models.ts:
+    - typescript
+    - typescript-resolvers
 ```
-
-## What's next?
-
-Get started with our guides:
-
-- [React and Vue](/docs/guides/react-vue)
-- [Angular](/docs/guides/angular)
-- [Svelte](/docs/guides/svelte)
-- [Apollo and Yoga server](/docs/guides/graphql-server-apollo-yoga)
-- [GraphQL Modules](/docs/guides/graphql-modules)
-
-If your stack is not listed above, please refer to [our plugins directory](/plugins).

@@ -1,20 +1,20 @@
-import { astFromObjectType, getRootTypeNames, MapperKind, mapSchema } from '@graphql-tools/utils';
 import {
-  DefinitionNode,
-  DirectiveNode,
-  FieldDefinitionNode,
-  GraphQLNamedType,
-  GraphQLObjectType,
   GraphQLSchema,
-  isObjectType,
-  ObjectTypeDefinitionNode,
-  OperationDefinitionNode,
   parse,
+  FieldDefinitionNode,
+  ObjectTypeDefinitionNode,
+  DirectiveNode,
   StringValueNode,
+  GraphQLObjectType,
+  isObjectType,
+  GraphQLNamedType,
+  DefinitionNode,
+  OperationDefinitionNode,
 } from 'graphql';
 import merge from 'lodash/merge.js';
-import { oldVisit } from './index.js';
 import { getBaseType } from './utils.js';
+import { MapperKind, mapSchema, astFromObjectType, getRootTypeNames } from '@graphql-tools/utils';
+import { oldVisit } from './index.js';
 
 /**
  * Federation Spec
@@ -167,12 +167,12 @@ export class ApolloFederation {
         const outputs: string[] = [`{ __typename: '${parentType.name}' } &`];
 
         // Look for @requires and see what the service needs and gets
-        const requires = getDirectivesByName('requires', fieldNode).map(this.extractFieldSet);
+        const requires = getDirectivesByName('requires', fieldNode).map(this.extractKeyOrRequiresFieldSet);
         const requiredFields = this.translateFieldSet(merge({}, ...requires), parentTypeSignature);
 
         // @key() @key() - "primary keys" in Federation
         const primaryKeys = keys.map(def => {
-          const fields = this.extractFieldSet(def);
+          const fields = this.extractKeyOrRequiresFieldSet(def);
           return this.translateFieldSet(fields, parentTypeSignature);
         });
 
@@ -203,7 +203,7 @@ export class ApolloFederation {
   private hasProvides(objectType: ObjectTypeDefinitionNode | GraphQLObjectType, node: FieldDefinitionNode): boolean {
     const fields = this.providesMap[isObjectType(objectType) ? objectType.name : objectType.name.value];
 
-    if (fields?.length) {
+    if (fields && fields.length) {
       return fields.includes(node.name.value);
     }
 
@@ -214,7 +214,7 @@ export class ApolloFederation {
     return `GraphQLRecursivePick<${parentTypeRef}, ${JSON.stringify(fields)}>`;
   }
 
-  private extractFieldSet(directive: DirectiveNode): any {
+  private extractKeyOrRequiresFieldSet(directive: DirectiveNode): any {
     const arg = directive.arguments.find(arg => arg.name.value === 'fields');
     const { value } = arg.value as StringValueNode;
 
@@ -234,7 +234,7 @@ export class ApolloFederation {
         Field(node) {
           return {
             name: node.name.value,
-            selection: node.selectionSet || true,
+            selection: node.selectionSet ? node.selectionSet : true,
           } as SelectionSetField;
         },
         Document(node) {
@@ -247,25 +247,38 @@ export class ApolloFederation {
     });
   }
 
+  private extractProvidesFieldSet(directive: DirectiveNode): string[] {
+    const arg = directive.arguments.find(arg => arg.name.value === 'fields');
+    const { value } = arg.value as StringValueNode;
+
+    if (/[{}]/gi.test(value)) {
+      throw new Error('Nested fields in _FieldSet is not supported in the @provides directive');
+    }
+
+    return value.split(/\s+/g);
+  }
+
   private createMapOfProvides() {
     const providesMap: Record<string, string[]> = {};
 
-    for (const typename of Object.keys(this.schema.getTypeMap())) {
+    Object.keys(this.schema.getTypeMap()).forEach(typename => {
       const objectType = this.schema.getType(typename);
 
       if (isObjectType(objectType)) {
-        for (const field of Object.values(objectType.getFields())) {
+        Object.values(objectType.getFields()).forEach(field => {
           const provides = getDirectivesByName('provides', field.astNode)
-            .map(this.extractFieldSet)
-            .reduce((prev, curr) => [...prev, ...Object.keys(curr)], []);
+            .map(this.extractProvidesFieldSet)
+            .reduce((prev, curr) => [...prev, ...curr], []);
           const ofType = getBaseType(field.type);
 
-          providesMap[ofType.name] ||= [];
+          if (!providesMap[ofType.name]) {
+            providesMap[ofType.name] = [];
+          }
 
           providesMap[ofType.name].push(...provides);
-        }
+        });
       }
-    }
+    });
 
     return providesMap;
   }

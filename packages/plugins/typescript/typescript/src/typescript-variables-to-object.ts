@@ -1,13 +1,13 @@
 import {
-  AvoidOptionalsConfig,
-  ConvertNameFn,
-  normalizeAvoidOptionals,
-  NormalizedScalarsMap,
-  OperationVariablesToObject,
-  ParsedDirectiveArgumentAndInputFieldMappings,
   ParsedEnumValuesMap,
+  OperationVariablesToObject,
+  NormalizedScalarsMap,
+  ConvertNameFn,
+  AvoidOptionalsConfig,
+  normalizeAvoidOptionals,
+  ParsedDirectiveArgumentAndInputFieldMappings,
 } from '@graphql-codegen/visitor-plugin-common';
-import { Kind, TypeNode } from 'graphql';
+import { TypeNode, Kind } from 'graphql';
 
 export class TypeScriptOperationVariablesToObject extends OperationVariablesToObject {
   constructor(
@@ -18,7 +18,6 @@ export class TypeScriptOperationVariablesToObject extends OperationVariablesToOb
     _namespacedImportName: string | null = null,
     _enumNames: string[] = [],
     _enumPrefix = true,
-    _enumSuffix = true,
     _enumValues: ParsedEnumValuesMap = {},
     _applyCoercion: Boolean = false,
     _directiveArgumentAndInputFieldMappings: ParsedDirectiveArgumentAndInputFieldMappings = {},
@@ -30,7 +29,6 @@ export class TypeScriptOperationVariablesToObject extends OperationVariablesToOb
       _namespacedImportName,
       _enumNames,
       _enumPrefix,
-      _enumSuffix,
       _enumValues,
       _applyCoercion,
       _directiveArgumentAndInputFieldMappings

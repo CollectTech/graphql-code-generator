@@ -1,4 +1,3 @@
-import { Source } from '@graphql-tools/utils';
 import {
   DefinitionNode,
   DocumentNode,
@@ -8,6 +7,7 @@ import {
   NamedTypeNode,
   TypeNode,
 } from 'graphql';
+import { Source } from '@graphql-tools/utils';
 import parse from 'parse-filepath';
 
 const sep = '/';
@@ -18,9 +18,7 @@ const sep = '/';
 export function collectUsedTypes(doc: DocumentNode): string[] {
   const used: string[] = [];
 
-  for (const node of doc.definitions) {
-    findRelated(node);
-  }
+  doc.definitions.forEach(findRelated);
 
   function markAsUsed(type: string) {
     pushUnique(used, type);
@@ -32,48 +30,36 @@ export function collectUsedTypes(doc: DocumentNode): string[] {
       markAsUsed(node.name.value);
 
       if (node.fields) {
-        for (const n of node.fields) {
-          findRelated(n);
-        }
+        node.fields.forEach(findRelated);
       }
 
       if (node.interfaces) {
-        for (const n of node.interfaces) {
-          findRelated(n);
-        }
+        node.interfaces.forEach(findRelated);
       }
     } else if (node.kind === Kind.INPUT_OBJECT_TYPE_DEFINITION || node.kind === Kind.INPUT_OBJECT_TYPE_EXTENSION) {
       // Input
       markAsUsed(node.name.value);
 
       if (node.fields) {
-        for (const n of node.fields) {
-          findRelated(n);
-        }
+        node.fields.forEach(findRelated);
       }
     } else if (node.kind === Kind.INTERFACE_TYPE_DEFINITION || node.kind === Kind.INTERFACE_TYPE_EXTENSION) {
       // Interface
       markAsUsed(node.name.value);
 
       if (node.fields) {
-        for (const n of node.fields) {
-          findRelated(n);
-        }
+        node.fields.forEach(findRelated);
       }
 
       if (node.interfaces) {
-        for (const n of node.interfaces) {
-          findRelated(n);
-        }
+        node.interfaces.forEach(findRelated);
       }
     } else if (node.kind === Kind.UNION_TYPE_DEFINITION || node.kind === Kind.UNION_TYPE_EXTENSION) {
       // Union
       markAsUsed(node.name.value);
 
       if (node.types) {
-        for (const n of node.types) {
-          findRelated(n);
-        }
+        node.types.forEach(findRelated);
       }
     } else if (node.kind === Kind.ENUM_TYPE_DEFINITION || node.kind === Kind.ENUM_TYPE_EXTENSION) {
       // Enum
@@ -91,9 +77,7 @@ export function collectUsedTypes(doc: DocumentNode): string[] {
       findRelated(resolveTypeNode(node.type));
 
       if (node.arguments) {
-        for (const n of node.arguments) {
-          findRelated(n);
-        }
+        node.arguments.forEach(findRelated);
       }
     } else if (
       node.kind === Kind.NAMED_TYPE &&
@@ -162,18 +146,20 @@ const getRelativePath = function (filepath: string, basePath: string) {
 export function groupSourcesByModule(sources: Source[], basePath: string): Record<string, Source[]> {
   const grouped: Record<string, Source[]> = {};
 
-  for (const source of sources) {
+  sources.forEach(source => {
     const relativePath = getRelativePath(source.location, basePath);
 
     if (relativePath) {
       // PERF: we could guess the module by matching source.location with a list of already resolved paths
       const mod = extractModuleDirectory(source.location, basePath);
 
-      grouped[mod] ||= [];
+      if (!grouped[mod]) {
+        grouped[mod] = [];
+      }
 
       grouped[mod].push(source);
     }
-  }
+  });
 
   return grouped;
 }
@@ -224,9 +210,9 @@ export function uniqueByKey<T extends Record<string, any[]>, K extends keyof T>(
 export function createObject<K extends string, T>(keys: K[], valueFn: (key: K) => T) {
   const obj: Record<K, T> = {} as any;
 
-  for (const key of keys) {
+  keys.forEach(key => {
     obj[key] = valueFn(key);
-  }
+  });
 
   return obj;
 }

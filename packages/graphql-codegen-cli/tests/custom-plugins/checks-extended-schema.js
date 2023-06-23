@@ -1,5 +1,5 @@
 module.exports = {
-  plugin(schema, _documents, _config) {
+  plugin: (schema, documents, config) => {
     return `
       Should have the Extension type: '${schema.getType('Extension')}'
     `;

@@ -66,11 +66,9 @@ export class TypeScriptDocumentsVisitor extends BaseDocumentsVisitor<
     const formatNamedField = (
       name: string,
       type: GraphQLOutputType | GraphQLNamedType | null,
-      isConditional = false,
-      isOptional = false
+      isConditional = false
     ): string => {
-      const optional =
-        isOptional || isConditional || (!this.config.avoidOptionals.field && !!type && !isNonNullType(type));
+      const optional = isConditional || (!this.config.avoidOptionals.field && !!type && !isNonNullType(type));
       return (this.config.immutableTypes ? `readonly ${name}` : name) + (optional ? '?' : '');
     };
 
@@ -78,7 +76,6 @@ export class TypeScriptDocumentsVisitor extends BaseDocumentsVisitor<
       namespacedImportName: this.config.namespacedImportName,
       convertName: this.convertName.bind(this),
       enumPrefix: this.config.enumPrefix,
-      enumSuffix: this.config.enumSuffix,
       scalars: this.scalars,
       formatNamedField,
       wrapTypeWithModifiers(baseType, type) {
@@ -110,7 +107,6 @@ export class TypeScriptDocumentsVisitor extends BaseDocumentsVisitor<
         this.config.namespacedImportName,
         enumsNames,
         this.config.enumPrefix,
-        this.config.enumSuffix,
         this.config.enumValues,
         this.config.arrayInputCoercion,
         undefined,

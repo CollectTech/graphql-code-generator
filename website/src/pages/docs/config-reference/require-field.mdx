@@ -1,7 +1,3 @@
----
-description: Learn how to use the require field to load external files without transpiling them.
----
-
 import { Callout } from '@theguild/components'
 
 # `require` field
@@ -12,15 +8,10 @@ The `require` field allows you to load any external files without the need to tr
 
 To use it, install the extensions you wish to use from npm and then specify a list of `require` extensions in your root config:
 
-```ts {5}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  require: ['extension1', 'extension2']
-  // ...
-}
-export default config
+```yaml
+require:
+  - extension1
+  - extension2
 ```
 
 Adding `require` extension is useful if you are loading your `GraphQLSchema` or GraphQL documents from a [code file](./schema-field#javascript-export), if you wish to use [custom plugins](/docs/custom-codegen/write-your-plugin), or use a [custom schema loader](./schema-field#custom-schema-loader) or a [custom document loader](./documents-field#custom-document-loader).
@@ -29,15 +20,9 @@ Adding `require` extension is useful if you are loading your `GraphQLSchema` or 
 
 If you wish to use TypeScript, just add [`ts-node`](https://github.com/TypeStrong/ts-node) from npm and specify its register export in your config file:
 
-```ts {5}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  require: ['ts-node/register']
-  // ...
-}
-export default config
+```yaml
+require:
+  - ts-node/register
 ```
 
 ## Specifying from the command line
@@ -57,7 +42,7 @@ It will make sure to load your `.env` file before executing the codegen and load
 To get started with this integration, make sure you have `.env` file with variables, `dotenv` installed, and codegen is being executed like that:
 
 ```sh
-graphql-codegen --require dotenv/config --config codegen.ts
+graphql-codegen --require dotenv/config --config codegen.yml
 ```
 
 #### Customize loaded env file
@@ -69,7 +54,7 @@ It allows you to specify a custom file path using 2 methods.
 You can either set an environment variable called `DOTENV_CONFIG_PATH` with the path:
 
 ```sh
-DOTENV_CONFIG_PATH="./my.env" graphql-codegen --require dotenv/config --config codegen.ts
+DOTENV_CONFIG_PATH="./my.env" graphql-codegen --require dotenv/config --config codegen.yml
 ```
 
 <Callout>You can use `cross-env` library if you are using Windows.</Callout>
@@ -77,7 +62,7 @@ DOTENV_CONFIG_PATH="./my.env" graphql-codegen --require dotenv/config --config c
 Or, you can specify it using codegen CLI, like that:
 
 ```sh
-graphql-codegen --require dotenv/config --config codegen.ts dotenv_config_path=my.env
+graphql-codegen --require dotenv/config --config codegen.yml dotenv_config_path=my.env
 ```
 
 #### `dotenv` Example
@@ -87,21 +72,11 @@ SCHEMAURL=https://example.com/graphql
 APIKEY=ABC123
 ```
 
-```ts
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: {
-    [process.env.SCHEMAURL]: {
-      headers: {
-        apikey: process.env.APIKEY
-      }
-    }
-  }
-  // ...
-}
-
-export default config
+```yaml filename="codegen.yml"
+schema:
+  - ${SCHEMAURL}:
+    headers:
+      apikey: ${APIKEY}
 ```
 
 <Callout>

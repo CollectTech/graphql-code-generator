@@ -1,11 +1,11 @@
 ---
 title: typescript
-description: TypeScript plugin. Adds support for TypeScript.
 ---
 
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
-<PluginApiDocs />
+export const getStaticProps = getNpmInfo('typescript')
+
+<PackageHeader />
+<PackageApiDocs />

@@ -1,13 +1,13 @@
 ---
 title: typescript-svelte-apollo
-description: This plugin generates observable Apollo queries with Typescript typings. This is a community plugin, to report eventual issues or find more examples, refer to this repository
 ---
 
-import { PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('typescript-svelte-apollo')
+
+<PackageHeader />
 
 This plugin generates observable Apollo queries with Typescript typings.
 
@@ -27,20 +27,15 @@ Path to the apollo client for this project (should point to a file with an apoll
 
 #### Usage Examples
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  generates: {
-    'path/to/file.ts': {
-      plugins: ['typescript', 'typescript-operations', 'graphql-codegen-svelte-apollo'],
-      config: {
-        clientPath: 'PATH_TO_APOLLO_CLIENT'
-      }
-    }
-  }
-}
-export default config
+```yaml {8}
+generates:
+path/to/file.ts:
+  plugins:
+    - typescript
+    - typescript-operations
+    - graphql-codegen-svelte-apollo
+  config:
+    clientPath: PATH_TO_APOLLO_CLIENT
 ```
 
 ### `asyncQuery`
@@ -52,21 +47,16 @@ By default, the plugin only generate observable queries, sometimes it may be use
 
 #### Usage Examples
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  generates: {
-    'path/to/file.ts': {
-      plugins: ['typescript', 'typescript-operations', 'graphql-codegen-svelte-apollo'],
-      config: {
-        clientPath: 'PATH_TO_APOLLO_CLIENT',
-        asyncQuery: true
-      }
-    }
-  }
-}
-export default config
+```yaml {9}
+generates:
+path/to/file.ts:
+  plugins:
+    - typescript
+    - typescript-operations
+    - graphql-codegen-svelte-apollo
+  config:
+    clientPath: PATH_TO_APOLLO_CLIENT
+    asyncQuery: true
 ```
 
 ## Usage Example
@@ -96,22 +86,17 @@ query Transactions($address: String) {
 
 And the following configuration:
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'YOUR_SCHEMA_HERE',
-  documents: './src/**/*.graphql',
-  generates: {
-    'path/to/file.ts': {
-      plugins: ['typescript', 'typescript-operations', 'graphql-codegen-svelte-apollo'],
-      config: {
-        clientPath: 'PATH_TO_APOLLO_CLIENT'
-      }
-    }
-  }
-}
-export default config
+```yaml
+schema: YOUR_SCHEMA_HERE
+documents: './src/**/*.graphql'
+generates:
+path/to/file.ts:
+  plugins:
+    - typescript
+    - typescript-operations
+    - graphql-codegen-svelte-apollo
+  config:
+    clientPath: PATH_TO_APOLLO_CLIENT
 ```
 
 Codegen will pre-compile the GraphQL operation into a `DocumentNode` object, and generate a ready-to-use Apollo query for each operation you have.
@@ -162,23 +147,18 @@ query Transactions($address: String) {
 
 And the following configuration:
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'YOUR_SCHEMA_HERE',
-  documents: './src/**/*.graphql',
-  generates: {
-    'path/to/file.ts': {
-      plugins: ['typescript', 'typescript-operations', 'graphql-codegen-svelte-apollo'],
-      config: {
-        clientPath: 'PATH_TO_APOLLO_CLIENT',
-        asyncQuery: true
-      }
-    }
-  }
-}
-export default config
+```yaml
+schema: YOUR_SCHEMA_HERE
+documents: './src/**/*.graphql'
+generates:
+path/to/file.ts:
+  plugins:
+    - typescript
+    - typescript-operations
+    - graphql-codegen-svelte-apollo
+  config:
+    clientPath: PATH_TO_APOLLO_CLIENT
+    asyncQuery: true
 ```
 
 Codegen will pre-compile the GraphQL operation into a `DocumentNode` object, and generate a ready-to-use Apollo query for each operation you have.

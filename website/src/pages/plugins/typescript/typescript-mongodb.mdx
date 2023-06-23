@@ -1,16 +1,16 @@
 ---
 title: typescript-mongodb
-description: GraphQL Code Generator plugin for generating TypeScript types for MongoDB models. This plugin generates TypeScript types for MongoDB models, which makes it relevant for server-side development only. It uses GraphQL directives to declare the types you want to generate and use in your MongoDB backend.
 ---
 
 import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { isDev: false })
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('typescript-mongodb')
 
-<Callout type="warning">
+<PackageHeader isDev={false} />
+
+<Callout type="warning" emoji="⚠️">
   Don't install this plugin as `devDependency`, because you need to import the directives from it.
 </Callout>
 
@@ -42,11 +42,11 @@ export interface UserDbObject {
 
 This interface can be used for db read/write purposes, thus making communication with the db much more consistent.
 
-<PluginApiDocs />
+<PackageApiDocs />
 
 ## Usage Example
 
-Once installed, add the directives' declaration to your GraphQL Schema definition:
+Once installed, add the directives declaration to your GraphQL Schema definition:
 
 ```ts
 import { makeExecutableSchema } from '@graphql-tools/schema'
@@ -63,19 +63,15 @@ const schema = makeExecutableSchema({
 
 And generate code using `gql-gen`:
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: './src/my-schema.js',
-  require: ['ts-node/register'],
-  generates: {
-    './src/generated/graphql.ts': {
-      plugins: ['typescript', 'typescript-mongodb']
-    }
-  }
-}
-export default config
+```yaml
+schema: ./src/my-schema.js
+require:
+  - ts-node/register
+generates:
+  ./src/generated/graphql.ts:
+    plugins:
+      - typescript
+      - typescript-mongodb
 ```
 
 At this point, you can add the directives to your GraphQL definitions, and generate your MongoDB models file.
@@ -108,7 +104,9 @@ Use this directive to declare a specific GraphQL field as part of your generated
 
 - `overrideType: String` - use this to override the type of the field; for example, if you store dates as `Date` but expose them as `String`.
 
-<Callout type="warning">If target property is an embedded entity, you should use `@embedded` instead.</Callout>
+<Callout type="warning" emoji="⚠️">
+  If target property is an embedded entity, you should use `@embedded` instead.
+</Callout>
 
 #### `@id` (on `FIELD_DEFINITION`)
 

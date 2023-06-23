@@ -1,13 +1,13 @@
-import { getBaseType, removeNonNullWrapper } from '@graphql-codegen/plugin-helpers';
-import { GraphQLInterfaceType, GraphQLObjectType, isEnumType, isNonNullType } from 'graphql';
 import {
   BaseSelectionSetProcessor,
+  ProcessResult,
   LinkField,
   PrimitiveAliasedFields,
-  PrimitiveField,
-  ProcessResult,
   SelectionSetProcessorConfig,
+  PrimitiveField,
 } from './base.js';
+import { GraphQLObjectType, GraphQLInterfaceType, isEnumType, isNonNullType } from 'graphql';
+import { getBaseType, removeNonNullWrapper } from '@graphql-codegen/plugin-helpers';
 
 export class PreResolveTypesProcessor extends BaseSelectionSetProcessor<SelectionSetProcessorConfig> {
   transformTypenameField(type: string, name: string): ProcessResult {
@@ -21,8 +21,7 @@ export class PreResolveTypesProcessor extends BaseSelectionSetProcessor<Selectio
 
   transformPrimitiveFields(
     schemaType: GraphQLObjectType | GraphQLInterfaceType,
-    fields: PrimitiveField[],
-    unsetTypes?: boolean
+    fields: PrimitiveField[]
   ): ProcessResult {
     if (fields.length === 0) {
       return [];
@@ -37,31 +36,19 @@ export class PreResolveTypesProcessor extends BaseSelectionSetProcessor<Selectio
       const useInnerType = field.isConditional && isNonNullType(fieldObj.type);
       const innerType = useInnerType ? removeNonNullWrapper(fieldObj.type) : undefined;
 
-      const name = this.config.formatNamedField(
-        field.fieldName,
-        useInnerType ? innerType : fieldObj.type,
-        field.isConditional,
-        unsetTypes
-      );
-
-      if (unsetTypes) {
-        return {
-          name,
-          type: 'never',
-        };
-      }
-
       if (isEnumType(baseType)) {
         typeToUse =
           (this.config.namespacedImportName ? `${this.config.namespacedImportName}.` : '') +
-          this.config.convertName(baseType.name, {
-            useTypesPrefix: this.config.enumPrefix,
-            useTypesSuffix: this.config.enumSuffix,
-          });
+          this.config.convertName(baseType.name, { useTypesPrefix: this.config.enumPrefix });
       } else if (this.config.scalars[baseType.name]) {
-        typeToUse = this.config.scalars[baseType.name].output;
+        typeToUse = this.config.scalars[baseType.name];
       }
 
+      const name = this.config.formatNamedField(
+        field.fieldName,
+        useInnerType ? innerType : fieldObj.type,
+        field.isConditional
+      );
       const wrappedType = this.config.wrapTypeWithModifiers(typeToUse, fieldObj.type);
 
       return {
@@ -73,8 +60,7 @@ export class PreResolveTypesProcessor extends BaseSelectionSetProcessor<Selectio
 
   transformAliasesPrimitiveFields(
     schemaType: GraphQLObjectType | GraphQLInterfaceType,
-    fields: PrimitiveAliasedFields[],
-    unsetTypes?: boolean
+    fields: PrimitiveAliasedFields[]
   ): ProcessResult {
     if (fields.length === 0) {
       return [];
@@ -90,25 +76,15 @@ export class PreResolveTypesProcessor extends BaseSelectionSetProcessor<Selectio
       }
       const fieldObj = schemaType.getFields()[aliasedField.fieldName];
       const baseType = getBaseType(fieldObj.type);
-      let typeToUse = this.config.scalars[baseType.name]?.output || baseType.name;
+      let typeToUse = this.config.scalars[baseType.name] || baseType.name;
 
       if (isEnumType(baseType)) {
         typeToUse =
           (this.config.namespacedImportName ? `${this.config.namespacedImportName}.` : '') +
-          this.config.convertName(baseType.name, {
-            useTypesPrefix: this.config.enumPrefix,
-            useTypesSuffix: this.config.enumSuffix,
-          });
+          this.config.convertName(baseType.name, { useTypesPrefix: this.config.enumPrefix });
       }
 
-      const name = this.config.formatNamedField(aliasedField.alias, fieldObj.type, undefined, unsetTypes);
-      if (unsetTypes) {
-        return {
-          type: 'never',
-          name,
-        };
-      }
-
+      const name = this.config.formatNamedField(aliasedField.alias, fieldObj.type);
       const wrappedType = this.config.wrapTypeWithModifiers(typeToUse, fieldObj.type);
 
       return {
@@ -118,14 +94,14 @@ export class PreResolveTypesProcessor extends BaseSelectionSetProcessor<Selectio
     });
   }
 
-  transformLinkFields(fields: LinkField[], unsetTypes?: boolean): ProcessResult {
+  transformLinkFields(fields: LinkField[]): ProcessResult {
     if (fields.length === 0) {
       return [];
     }
 
     return fields.map(field => ({
       name: field.alias || field.name,
-      type: unsetTypes ? 'never' : field.selectionSet,
+      type: field.selectionSet,
     }));
   }
 }

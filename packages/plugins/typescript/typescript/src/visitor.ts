@@ -1,32 +1,32 @@
 import {
-  AvoidOptionalsConfig,
-  BaseTypesVisitor,
-  DeclarationBlock,
-  DeclarationKind,
-  getConfigValue,
-  indent,
-  isOneOfInputObjectType,
-  normalizeAvoidOptionals,
-  ParsedTypesConfig,
   transformComment,
   wrapWithSingleQuotes,
+  DeclarationBlock,
+  indent,
+  BaseTypesVisitor,
+  ParsedTypesConfig,
+  getConfigValue,
+  DeclarationKind,
+  normalizeAvoidOptionals,
+  AvoidOptionalsConfig,
+  isOneOfInputObjectType,
 } from '@graphql-codegen/visitor-plugin-common';
+import { TypeScriptPluginConfig } from './config.js';
 import autoBind from 'auto-bind';
 import {
-  EnumTypeDefinitionNode,
   FieldDefinitionNode,
-  GraphQLObjectType,
-  GraphQLSchema,
-  InputValueDefinitionNode,
-  isEnumType,
-  Kind,
-  ListTypeNode,
   NamedTypeNode,
+  ListTypeNode,
   NonNullTypeNode,
-  TypeDefinitionNode,
+  EnumTypeDefinitionNode,
+  Kind,
+  InputValueDefinitionNode,
+  GraphQLSchema,
+  isEnumType,
   UnionTypeDefinitionNode,
+  GraphQLObjectType,
+  TypeDefinitionNode,
 } from 'graphql';
-import { TypeScriptPluginConfig } from './config.js';
 import { TypeScriptOperationVariablesToObject } from './typescript-variables-to-object.js';
 
 export interface TypeScriptPluginParsedConfig extends ParsedTypesConfig {
@@ -49,8 +49,6 @@ export interface TypeScriptPluginParsedConfig extends ParsedTypesConfig {
 export const EXACT_SIGNATURE = `type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };`;
 export const MAKE_OPTIONAL_SIGNATURE = `type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };`;
 export const MAKE_MAYBE_SIGNATURE = `type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };`;
-export const MAKE_EMPTY_SIGNATURE = `type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };`;
-export const MAKE_INCREMENTAL_SIGNATURE = `type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };`;
 
 export class TsVisitor<
   TRawConfig extends TypeScriptPluginConfig = TypeScriptPluginConfig,
@@ -93,7 +91,6 @@ export class TsVisitor<
         null,
         enumNames,
         pluginConfig.enumPrefix,
-        pluginConfig.enumSuffix,
         this.config.enumValues,
         false,
         this.config.directiveArgumentAndInputFieldMappings,
@@ -106,7 +103,7 @@ export class TsVisitor<
     });
   }
 
-  protected _getTypeForNode(node: NamedTypeNode, isVisitingInputType: boolean): string {
+  protected _getTypeForNode(node: NamedTypeNode): string {
     const typeAsString = node.name as any as string;
 
     if (this.config.useImplementingTypes) {
@@ -129,7 +126,7 @@ export class TsVisitor<
       }
     }
 
-    const typeString = super._getTypeForNode(node, isVisitingInputType);
+    const typeString = super._getTypeForNode(node);
     const schemaType = this._schema.getType(node.name as any as string);
 
     if (isEnumType(schemaType)) {
@@ -162,8 +159,6 @@ export class TsVisitor<
       this.getExactDefinition(),
       this.getMakeOptionalDefinition(),
       this.getMakeMaybeDefinition(),
-      this.getMakeEmptyDefinition(),
-      this.getIncrementalDefinition(),
     ];
 
     if (this.config.wrapFieldDefinitions) {
@@ -190,14 +185,6 @@ export class TsVisitor<
     if (this.config.onlyEnums) return '';
 
     return `${this.getExportPrefix()}${MAKE_MAYBE_SIGNATURE}`;
-  }
-
-  public getMakeEmptyDefinition(): string {
-    return `${this.getExportPrefix()}${MAKE_EMPTY_SIGNATURE}`;
-  }
-
-  public getIncrementalDefinition(): string {
-    return `${this.getExportPrefix()}${MAKE_INCREMENTAL_SIGNATURE}`;
   }
 
   public getMaybeValue(): string {
@@ -253,7 +240,7 @@ export class TsVisitor<
     }
     const originalNode = parent[key] as UnionTypeDefinitionNode;
     const possibleTypes = originalNode.types
-      .map(t => (this.scalars[t.name.value] ? this._getScalar(t.name.value, 'output') : this.convertName(t)))
+      .map(t => (this.scalars[t.name.value] ? this._getScalar(t.name.value) : this.convertName(t)))
       .concat(...withFutureAddedValue)
       .join(' | ');
 
@@ -354,13 +341,14 @@ export class TsVisitor<
     const enumName = node.name as any as string;
 
     // In case of mapped external enum string
-    if (this.config.enumValues[enumName]?.sourceFile) {
+    if (this.config.enumValues[enumName] && this.config.enumValues[enumName].sourceFile) {
       return `export { ${this.config.enumValues[enumName].typeIdentifier} };\n`;
     }
 
     const getValueFromConfig = (enumValue: string | number) => {
       if (
-        this.config.enumValues[enumName]?.mappedValues &&
+        this.config.enumValues[enumName] &&
+        this.config.enumValues[enumName].mappedValues &&
         typeof this.config.enumValues[enumName].mappedValues[enumValue] !== 'undefined'
       ) {
         return this.config.enumValues[enumName].mappedValues[enumValue];
@@ -374,7 +362,6 @@ export class TsVisitor<
 
     const enumTypeName = this.convertName(node, {
       useTypesPrefix: this.config.enumPrefix,
-      useTypesSuffix: this.config.enumSuffix,
     });
 
     if (this.config.enumsAsTypes) {
@@ -440,12 +427,10 @@ export class TsVisitor<
         .withBlock(
           node.values
             .map(enumOption => {
-              const optionName = this.makeValidEnumIdentifier(
-                this.convertName(enumOption, {
-                  useTypesPrefix: false,
-                  transformUnderscore: true,
-                })
-              );
+              const optionName = this.convertName(enumOption, {
+                useTypesPrefix: false,
+                transformUnderscore: true,
+              });
               const comment = transformComment(enumOption.description as any as string, 1);
               const name = enumOption.name as unknown as string;
               const enumValue: string | number = getValueFromConfig(name) ?? name;

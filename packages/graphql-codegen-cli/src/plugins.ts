@@ -1,5 +1,5 @@
+import { DetailedError, Types, CodegenPlugin } from '@graphql-codegen/plugin-helpers';
 import { resolve } from 'path';
-import { CodegenPlugin, Types } from '@graphql-codegen/plugin-helpers';
 
 export async function getPluginByName(
   name: string,
@@ -23,7 +23,8 @@ export async function getPluginByName(
       return await pluginLoader(moduleName);
     } catch (err) {
       if (err.code !== 'MODULE_NOT_FOUND' && err.code !== 'ERR_MODULE_NOT_FOUND') {
-        throw new Error(
+        throw new DetailedError(
+          `Unable to load template plugin matching ${name}`,
           `
               Unable to load template plugin matching '${name}'.
               Reason:
@@ -38,11 +39,12 @@ export async function getPluginByName(
     .map(name =>
       `
         - ${name}
-    `.trimEnd()
+    `.trimRight()
     )
     .join('');
 
-  throw new Error(
+  throw new DetailedError(
+    `Unable to find template plugin matching ${name}`,
     `
         Unable to find template plugin matching '${name}'
         Install one of the following packages:

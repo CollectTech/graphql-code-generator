@@ -1,6 +1,5 @@
 ---
 title: Introduction
-description: GraphQL Code Generator is a plugin-based tool that helps you get the best out of your GraphQL stack. From back-end to front-end, GraphQL Code Generator automates the generation of typed Queries, Mutations and, Subscriptions for React, Vue, Angular, Next.js, Svelte, whether you are using Apollo Client, URQL or, React Query.
 ---
 
 import { Tabs, Tab, Callout } from '@theguild/components'
@@ -76,7 +75,7 @@ const postsQueryDocument = /* GraphQL */ `
 `
 
 const Posts = () => {
-  const [result] = useQuery<PostsQuery>({ query: postsQueryDocument })
+  const [result] = useQuery<PostQuery>({ query: postsQueryDocument })
 
   // …
 }
@@ -256,55 +255,16 @@ Any mistake on your manually maintained data types ripples in many of your compo
 For this reason, automating and generating the typing of your GraphQL operations will both improve the developer
 experience and stability of your stack.
 
-After installing 3 packages:
-
-```sh npm2yarn
-npm i graphql
-npm i -D typescript @graphql-codegen/cli @graphql-codegen/client-preset
-```
-
-and providing a simple configuration:
-
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-   schema: 'https://localhost:4000/graphql',
-   documents: ['src/**/*.tsx'],
-   generates: {
-      './src/gql/': {
-        preset: 'client',
-      }
-   }
-}
-export default config
-```
-
-You will no longer need to maintain TypeScript types:
+After [installing](/docs/getting-started/installation) and [configuring](/docs/config-reference/codegen-config) GraphQL Code Generator, our front-end code will be fully-typed and
+up-to-date as follows:
 
 <Tabs items={['URQL React', 'React Query', 'Vue Apollo', 'Angular Apollo', 'Svelte Apollo']}>
 <Tab>
 ```tsx
 import { useQuery } from 'urql'
-import { graphql } from './gql/gql'
-
-// postsQueryDocument is now fully typed!
-const postsQueryDocument = graphql(/* GraphQL */ `
-  query Posts {
-    posts {
-      id
-      title
-      author {
-        id
-        firstName
-        lastName
-      }
-    }
-  }
-`)
+import { postsQueryDocument } from './graphql/generated'
 
 const Posts = () => {
-  // URQL's `useQuery()` knows how to work with typed graphql documents
   const [result] = useQuery({ query: postsQueryDocument })
 
   // `result` is fully typed!
@@ -315,33 +275,12 @@ const Posts = () => {
 
 <Tab>
 ```tsx
-import { request } from 'graphql-request'
-import { useQuery } from '@tanstack/react-query'
-import { graphql } from './gql/gql'
-
-// postsQueryDocument is now fully typed!
-const postsQueryDocument = graphql(/* GraphQL */ `
-  query Posts {
-    posts {
-      id
-      title
-      author {
-        id
-        firstName
-        lastName
-      }
-    }
-  }
-`)
+import { usePosts } from '../graphql/generated'
 
 const Posts = () => {
-  // React Query `useQuery()` knows how to work with typed graphql documents
-  const { data } = useQuery<PostQuery>('posts', async () => {
-    const { posts } = await request(endpoint, postsQueryDocument)
-    return posts
-  })
+  const { data } = usePosts()
 
-  // `data` is fully typed!
+  // `data` is typed!
   // …
 }
 ```
@@ -349,36 +288,27 @@ const Posts = () => {
 
 <Tab>
 ```vue
-<script setup lang="ts">
-import { useQuery } from '@vue/apollo-composable';
-import { graphql } from './gql/gql';
-import FilmItem from './components/FilmItem.vue';
-import { computed } from 'vue';
-const { result } = useQuery(
-  graphql(/* GraphQL */ `
-    query Posts {
-      posts {
-        id
-        title
-        author {
-          id
-          firstName
-          lastName
-        }
-      }
-    }
-  `),
-);
-
-// `posts` is properly typed!
-const posts = computed(() => result.value?.posts);
-</script>
-
 <template>
-  <ul>
-    <li v-for="film of films"><FilmItem :film="film" /></li>
-  </ul>
+  <div class="apollo">
+    <!-- UI … -->
+  </div>
 </template>
+
+<script>
+import { usePostQuery } from '../generated/graphql'
+
+export default {
+  apollo: usePostQuery({
+    // `variables` is properly typed!
+    variables: { id: 1 }
+  }),
+  data() {
+    return {
+      post: undefined
+    }
+  }
+}
+</script>
 ```
 </Tab>
 
@@ -425,12 +355,6 @@ Now, with simple configuration and an npm/yarn script, a front-end developers be
 - **less boilerplate** (thanks to full code generation such as React hooks generation)
 
 <Callout>
-**Operations and fragments must have unique names**
-
-GraphQL Code Generator checks for this automatically and will let you know if you have any conflicts.
-</Callout>
-
-<Callout>
 **How does GraphQL Code Generator work?**
 
 More details on the inner working of GraphQL Code Generator are available on [this page](/docs/advanced/how-does-it-work).
@@ -475,8 +399,7 @@ server.listen().then(({ url }) => {
 <Tab>
 ```ts
 import { readFileSync } from 'node:fs'
-import { createServer } from 'node:http'
-import { createYoga, createSchema } from 'graphql-yoga'
+import { createServer } from '@graphql-yoga/node'
 import { Resolvers } from './resolvers-types'
 
 const typeDefs = readFileSync('./schema.graphql', 'utf8')
@@ -487,13 +410,9 @@ const resolvers: Resolvers = {
   }
 }
 
-const schema = createSchema({ typeDefs, resolvers })
-const yoga = createYoga({ schema })
-const server = createServer(yoga)
+const server = createServer({ typeDefs, resolvers })
 
-server.listen(4000, () => {
-  console.log('GraphQL Server is listening on http://localhost:4000/graphql');
-})
+server.start()
 ```
 </Tab>
 
@@ -515,7 +434,7 @@ Given the following structure:
 
 The User module resolvers would be:
 
-```ts filename="src/modules/user/resolvers.ts"
+```tsx filename="src/modules/user/resolvers.ts"
 import { UsersModule } from './generated-types/module-types'
 
 export const resolvers: UsersModule.Resolvers = {
@@ -527,14 +446,9 @@ export const resolvers: UsersModule.Resolvers = {
 
 ## What's next?
 
-Start by [installing GraphQL Code Generator](/docs/getting-started/installation) in your project or get started with our guides:
-- [React and Vue](/docs/guides/react-vue)
-- [Angular](/docs/guides/angular)
-- [Svelte](/docs/guides/svelte)
-- [Apollo and Yoga server](/docs/guides/graphql-server-apollo-yoga)
-- [GraphQL Modules](/docs/guides/graphql-modules)
+Start by [installing GraphQL Code Generator](/docs/getting-started/installation) in your project.
 
-If your stack is not listed above, please refer to [our plugins directory](/plugins).
+Then, you can either read a guide or go over [the list of available plugins](/plugins) to find more plugins that satisfy your needs.
 
 If you are experiencing any issues, you can reach us via the following channels:
 

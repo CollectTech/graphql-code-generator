@@ -1,26 +1,26 @@
-import { oldVisit, PluginFunction, Types } from '@graphql-codegen/plugin-helpers';
-import { transformSchemaAST } from '@graphql-codegen/schema-ast';
+import { Types, PluginFunction, oldVisit } from '@graphql-codegen/plugin-helpers';
 import {
-  DocumentNode,
-  getNamedType,
-  GraphQLNamedType,
-  GraphQLSchema,
-  isIntrospectionType,
-  isObjectType,
   parse,
-  printIntrospectionSchema,
-  TypeInfo,
   visit,
+  GraphQLSchema,
+  TypeInfo,
+  GraphQLNamedType,
   visitWithTypeInfo,
+  getNamedType,
+  isIntrospectionType,
+  DocumentNode,
+  printIntrospectionSchema,
+  isObjectType,
 } from 'graphql';
-import { TypeScriptPluginConfig } from './config.js';
-import { TsIntrospectionVisitor } from './introspection-visitor.js';
 import { TsVisitor } from './visitor.js';
+import { TsIntrospectionVisitor } from './introspection-visitor.js';
+import { TypeScriptPluginConfig } from './config.js';
+import { transformSchemaAST } from '@graphql-codegen/schema-ast';
 
-export * from './config.js';
-export * from './introspection-visitor.js';
 export * from './typescript-variables-to-object.js';
 export * from './visitor.js';
+export * from './config.js';
+export * from './introspection-visitor.js';
 
 export const plugin: PluginFunction<TypeScriptPluginConfig, Types.ComplexPluginOutput> = (
   schema: GraphQLSchema,
@@ -65,21 +65,19 @@ export function includeIntrospectionTypesDefinitions(
     Field() {
       const type = getNamedType(typeInfo.getType());
 
-      if (type && isIntrospectionType(type) && !usedTypes.includes(type)) {
+      if (isIntrospectionType(type) && !usedTypes.includes(type)) {
         usedTypes.push(type);
       }
     },
   });
 
-  for (const doc of documents) {
-    visit(doc.document, documentsVisitor);
-  }
+  documents.forEach(doc => visit(doc.document, documentsVisitor));
 
   const typesToInclude: GraphQLNamedType[] = [];
 
-  for (const type of usedTypes) {
+  usedTypes.forEach(type => {
     collectTypes(type);
-  }
+  });
 
   const visitor = new TsIntrospectionVisitor(schema, config, typesToInclude);
   const result: DocumentNode = oldVisit(parse(printIntrospectionSchema(schema)), { leave: visitor });
@@ -96,11 +94,11 @@ export function includeIntrospectionTypesDefinitions(
     if (isObjectType(type)) {
       const fields = type.getFields();
 
-      for (const key of Object.keys(fields)) {
+      Object.keys(fields).forEach(key => {
         const field = fields[key];
         const type = getNamedType(field.type);
         collectTypes(type);
-      }
+      });
     }
   }
 

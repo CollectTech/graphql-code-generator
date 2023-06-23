@@ -1,13 +1,13 @@
 ---
 title: named-operations-object
-description: Generates an object containing a list of all your GraphQL operations and fragments. This is useful if you are using Apollo-Client and wish to have type validation when you are using `refetchQueries`.
 ---
 
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('named-operations-object')
+
+<PackageHeader />
 
 This plugin generates an object containing a list of all your GraphQL operations and fragments. This is useful if you are using Apollo-Client and wish to have type validation when you are using `refetchQueries`.
 
@@ -22,25 +22,21 @@ export const namedOperations = {
 }
 ```
 
-<PluginApiDocs />
+<PackageApiDocs />
 
 ## How to use?
 
 Include the plugin within your output (into an existing `.js`/`.ts` file, or a new file), for example:
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'YOUR_SCHEMA',
-  documents: 'YOUR_OPERATIONS',
-  generates: {
-    './types.ts': {
-      plugins: ['typescript', 'typescript-operations', 'named-operations-object']
-    }
-  }
-}
-export default config
+```yaml
+schema: YOUR_SCHEMA
+documents: YOUR_OPERATIONS
+generates:
+  ./types.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - named-operations-object
 ```
 
 ### Refetch queries without input parameters

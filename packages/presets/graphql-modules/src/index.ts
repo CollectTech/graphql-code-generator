@@ -1,10 +1,10 @@
-import { join, relative, resolve } from 'path';
 import { Types } from '@graphql-codegen/plugin-helpers';
-import { BaseVisitor, getConfigValue } from '@graphql-codegen/visitor-plugin-common';
 import { concatAST, isScalarType } from 'graphql';
+import { resolve, relative, join } from 'path';
+import { groupSourcesByModule, stripFilename, normalize, isGraphQLPrimitive } from './utils.js';
 import { buildModule } from './builder.js';
 import { ModulesConfig } from './config.js';
-import { groupSourcesByModule, isGraphQLPrimitive, normalize, stripFilename } from './utils.js';
+import { BaseVisitor, getConfigValue } from '@graphql-codegen/visitor-plugin-common';
 
 export const preset: Types.OutputPreset<ModulesConfig> = {
   buildGeneratesSection: options => {
@@ -12,7 +12,6 @@ export const preset: Types.OutputPreset<ModulesConfig> = {
     const { baseTypesPath, encapsulateModuleTypes } = options.presetConfig;
     const useGraphQLModules = getConfigValue(options?.presetConfig.useGraphQLModules, true);
     const requireRootResolvers = getConfigValue(options?.presetConfig.requireRootResolvers, false);
-    const useTypeImports = getConfigValue(options?.config.useTypeImports, false) || false;
 
     const cwd = resolve(options.presetConfig.cwd || process.cwd());
     const importTypesNamespace = options.presetConfig.importTypesNamespace || 'Types';
@@ -23,7 +22,7 @@ export const preset: Types.OutputPreset<ModulesConfig> = {
       );
     }
 
-    if (!options.schemaAst?.extensions.sources) {
+    if (!options.schemaAst || !options.schemaAst.extensions.sources) {
       throw new Error(`Preset "graphql-modules" requires to use GraphQL SDL`);
     }
 
@@ -69,7 +68,6 @@ export const preset: Types.OutputPreset<ModulesConfig> = {
         enumsAsTypes: true,
       },
       schemaAst: options.schemaAst!,
-      documentTransforms: options.documentTransforms,
     };
 
     const baseTypesFilename = baseTypesPath.replace(/\.(js|ts|d.ts)$/, '');
@@ -115,13 +113,11 @@ export const preset: Types.OutputPreset<ModulesConfig> = {
                   schema.getMutationType()?.name,
                   schema.getSubscriptionType()?.name,
                 ].filter(Boolean),
-                useTypeImports,
               }),
           },
         },
         config: options.config,
         schemaAst: options.schemaAst,
-        documentTransforms: options.documentTransforms,
       };
     });
 

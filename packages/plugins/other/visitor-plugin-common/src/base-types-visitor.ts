@@ -1,50 +1,50 @@
 import {
   DirectiveDefinitionNode,
-  DirectiveNode,
   EnumTypeDefinitionNode,
   EnumValueDefinitionNode,
   FieldDefinitionNode,
-  GraphQLEnumType,
   GraphQLSchema,
   InputObjectTypeDefinitionNode,
   InputValueDefinitionNode,
   InterfaceTypeDefinitionNode,
-  isEnumType,
-  Kind,
   ListTypeNode,
   NamedTypeNode,
   NameNode,
   NonNullTypeNode,
   ObjectTypeDefinitionNode,
   ScalarTypeDefinitionNode,
-  StringValueNode,
   UnionTypeDefinitionNode,
+  StringValueNode,
+  isEnumType,
+  DirectiveNode,
+  Kind,
+  GraphQLEnumType,
 } from 'graphql';
 import { BaseVisitor, ParsedConfig, RawConfig } from './base-visitor.js';
-import { normalizeDeclarationKind } from './declaration-kinds.js';
-import { parseEnumValues } from './enum-values.js';
-import { transformDirectiveArgumentAndInputFieldMappings } from './mappers.js';
 import { DEFAULT_SCALARS } from './scalars.js';
+import { normalizeDeclarationKind } from './declaration-kinds.js';
 import {
-  DeclarationKind,
-  DeclarationKindConfig,
-  DirectiveArgumentAndInputFieldMappings,
   EnumValuesMap,
   NormalizedScalarsMap,
-  ParsedDirectiveArgumentAndInputFieldMappings,
+  DeclarationKindConfig,
+  DeclarationKind,
   ParsedEnumValuesMap,
+  DirectiveArgumentAndInputFieldMappings,
+  ParsedDirectiveArgumentAndInputFieldMappings,
 } from './types.js';
 import {
-  buildScalarsFromConfig,
+  transformComment,
   DeclarationBlock,
   DeclarationBlockConfig,
-  getConfigValue,
   indent,
-  isOneOfInputObjectType,
-  transformComment,
   wrapWithSingleQuotes,
+  getConfigValue,
+  buildScalarsFromConfig,
+  isOneOfInputObjectType,
 } from './utils.js';
 import { OperationVariablesToObject } from './variables-to-object.js';
+import { parseEnumValues } from './enum-values.js';
+import { transformDirectiveArgumentAndInputFieldMappings } from './mappers.js';
 
 export interface ParsedTypesConfig extends ParsedConfig {
   enumValues: ParsedEnumValuesMap;
@@ -53,7 +53,6 @@ export interface ParsedTypesConfig extends ParsedConfig {
   onlyEnums: boolean;
   onlyOperationTypes: boolean;
   enumPrefix: boolean;
-  enumSuffix: boolean;
   fieldWrapperValue: string;
   wrapFieldDefinitions: boolean;
   entireFieldWrapperValue: string;
@@ -69,21 +68,9 @@ export interface RawTypesConfig extends RawConfig {
    * @exampleMarkdown
    * ## With Custom Values
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          addUnderscoreToArgsType: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   *   config:
+   *     addUnderscoreToArgsType: true
    * ```
    */
   addUnderscoreToArgsType?: boolean;
@@ -93,65 +80,24 @@ export interface RawTypesConfig extends RawConfig {
    *
    * @exampleMarkdown
    * ## With Custom Values
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          enumValues: {
-   *            MyEnum: {
-   *              A: 'foo'
-   *            }
-   *          }
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   *   config:
+   *     enumValues:
+   *       MyEnum:
+   *         A: 'foo'
    * ```
    *
    * ## With External Enum
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          enumValues: {
-   *            MyEnum: './my-file#MyCustomEnum',
-   *          }
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   *   config:
+   *     enumValues:
+   *       MyEnum: ./my-file#MyCustomEnum
    * ```
    *
    * ## Import All Enums from a file
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          enumValues: {
-   *            MyEnum: './my-file',
-   *          }
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   *   config:
+   *     enumValues: ./my-file
    * ```
    */
   enumValues?: EnumValuesMap;
@@ -161,43 +107,18 @@ export interface RawTypesConfig extends RawConfig {
    * @exampleMarkdown
    * ## Override all declarations
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          declarationKind: 'interface'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   *   config:
+   *     declarationKind: 'interface'
    * ```
    *
    * ## Override only specific declarations
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          declarationKind: {
-   *            type: 'interface',
-   *            input: 'interface'
-   *          }
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   *   config:
+   *     declarationKind:
+   *       type: 'interface'
+   *       input: 'interface'
    * ```
    */
   declarationKind?: DeclarationKind | DeclarationKindConfig;
@@ -208,51 +129,13 @@ export interface RawTypesConfig extends RawConfig {
    * @exampleMarkdown
    * ## Disable enum prefixes
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          typesPrefix: 'I',
-   *          enumPrefix: false
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   *   config:
+   *     typesPrefix: I
+   *     enumPrefix: false
    * ```
    */
   enumPrefix?: boolean;
-  /**
-   * @default true
-   * @description Allow you to disable suffixing for generated enums, works in combination with `typesSuffix`.
-   *
-   * @exampleMarkdown
-   * ## Disable enum suffixes
-   *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          typesSuffix: 'I',
-   *          enumSuffix: false
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
-   * ```
-   */
-  enumSuffix?: boolean;
   /**
    * @description Allow you to add wrapper for field type, use T as the generic value. Make sure to set `wrapFieldDefinitions` to `true` in order to make this flag work.
    * @default T
@@ -260,22 +143,14 @@ export interface RawTypesConfig extends RawConfig {
    * @exampleMarkdown
    * ## Allow Promise
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          wrapFieldDefinitions: true,
-   *          fieldWrapperValue: 'T | Promise<T>',
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *     config:
+   *       wrapFieldDefinitions: true
+   *       fieldWrapperValue: T | Promise<T>
    * ```
    */
   fieldWrapperValue?: string;
@@ -287,21 +162,13 @@ export interface RawTypesConfig extends RawConfig {
    * @exampleMarkdown
    * ## Enable wrapping fields
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          wrapFieldDefinitions: true,
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *     config:
+   *       wrapFieldDefinitions: true
    * ```
    */
   wrapFieldDefinitions?: boolean;
@@ -312,21 +179,13 @@ export interface RawTypesConfig extends RawConfig {
    * @exampleMarkdown
    * ## Override all definition types
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          onlyEnums: true,
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *     config:
+   *       onlyEnums: true
    * ```
    */
   onlyEnums?: boolean;
@@ -337,21 +196,13 @@ export interface RawTypesConfig extends RawConfig {
    * @exampleMarkdown
    * ## Override all definition types
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          onlyOperationTypes: true,
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *     config:
+   *       onlyOperationTypes: true
    * ```
    */
   onlyOperationTypes?: boolean;
@@ -362,21 +213,13 @@ export interface RawTypesConfig extends RawConfig {
    * @exampleMarkdown
    * ## Ignore enum values from schema
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          ignoreEnumValuesFromSchema: true,
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *     config:
+   *       ignoreEnumValuesFromSchema: true
    * ```
    */
   ignoreEnumValuesFromSchema?: boolean;
@@ -390,21 +233,13 @@ export interface RawTypesConfig extends RawConfig {
    * @default true
    *
    * @example Enable wrapping entire fields
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          wrapEntireFieldDefinitions: false,
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   * path/to/file.ts:
+   *  plugins:
+   *    - typescript
+   *  config:
+   *    wrapEntireFieldDefinitions: false
    * ```
    */
   wrapEntireFieldDefinitions?: boolean;
@@ -416,21 +251,13 @@ export interface RawTypesConfig extends RawConfig {
    * @default T | Promise<T> | (() => T | Promise<T>)
    *
    * @example Only allow values
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          entireFieldWrapperValue: 'T',
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   * path/to/file.ts:
+   *  plugins:
+   *    - typescript
+   *  config:
+   *    entireFieldWrapperValue: T
    * ```
    */
   entireFieldWrapperValue?: string;
@@ -449,25 +276,13 @@ export interface RawTypesConfig extends RawConfig {
    * Please use this configuration option with care!
    *
    * @exampleMarkdown
-   * ## Custom Context Type\
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          directiveArgumentAndInputFieldMappings: {
-   *            AsNumber: 'number',
-   *            AsComplex: './my-models#Complex',
-   *          }
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ## Custom Context Type
+   * ```yaml
+   * plugins:
+   *   config:
+   *     directiveArgumentAndInputFieldMappings:
+   *       AsNumber: number
+   *       AsComplex: ./my-models#Complex
    * ```
    */
   directiveArgumentAndInputFieldMappings?: DirectiveArgumentAndInputFieldMappings;
@@ -475,21 +290,10 @@ export interface RawTypesConfig extends RawConfig {
    * @description Adds a suffix to the imported names to prevent name clashes.
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          directiveArgumentAndInputFieldMappings: 'Model'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * plugins:
+   *   config:
+   *     directiveArgumentAndInputFieldMappingTypeSuffix: Model
    * ```
    */
   directiveArgumentAndInputFieldMappingTypeSuffix?: string;
@@ -509,7 +313,6 @@ export class BaseTypesVisitor<
   ) {
     super(rawConfig, {
       enumPrefix: getConfigValue(rawConfig.enumPrefix, true),
-      enumSuffix: getConfigValue(rawConfig.enumSuffix, true),
       onlyEnums: getConfigValue(rawConfig.onlyEnums, false),
       onlyOperationTypes: getConfigValue(rawConfig.onlyOperationTypes, false),
       addUnderscoreToArgsType: getConfigValue(rawConfig.addUnderscoreToArgsType, false),
@@ -557,21 +360,17 @@ export class BaseTypesVisitor<
   }
 
   public getScalarsImports(): string[] {
-    return Object.keys(this.config.scalars).reduce((res, enumName) => {
-      const mappedValue = this.config.scalars[enumName];
+    return Object.keys(this.config.scalars)
+      .map(enumName => {
+        const mappedValue = this.config.scalars[enumName];
 
-      if (mappedValue.input.isExternal) {
-        res.push(this._buildTypeImport(mappedValue.input.import, mappedValue.input.source, mappedValue.input.default));
-      }
+        if (mappedValue.isExternal) {
+          return this._buildTypeImport(mappedValue.import, mappedValue.source, mappedValue.default);
+        }
 
-      if (mappedValue.output.isExternal) {
-        res.push(
-          this._buildTypeImport(mappedValue.output.import, mappedValue.output.source, mappedValue.output.default)
-        );
-      }
-
-      return res;
-    }, []);
+        return null;
+      })
+      .filter(a => a);
   }
 
   public getDirectiveArgumentAndInputFieldMappingsImports(): string[] {
@@ -591,20 +390,13 @@ export class BaseTypesVisitor<
   public get scalarsDefinition(): string {
     if (this.config.onlyEnums) return '';
     const allScalars = Object.keys(this.config.scalars).map(scalarName => {
-      const inputScalarValue = this.config.scalars[scalarName].input.type;
-      const outputScalarValue = this.config.scalars[scalarName].output.type;
+      const scalarValue = this.config.scalars[scalarName].type;
       const scalarType = this._schema.getType(scalarName);
-      const comment = scalarType?.astNode && scalarType.description ? transformComment(scalarType.description, 1) : '';
+      const comment =
+        scalarType && scalarType.astNode && scalarType.description ? transformComment(scalarType.description, 1) : '';
       const { scalar } = this._parsedConfig.declarationKind;
 
-      return (
-        comment +
-        indent(
-          `${scalarName}: { input: ${inputScalarValue}${this.getPunctuation(
-            scalar
-          )} output: ${outputScalarValue}${this.getPunctuation(scalar)} }`
-        )
-      );
+      return comment + indent(`${scalarName}: ${scalarValue}${this.getPunctuation(scalar)}`);
     });
 
     return new DeclarationBlock(this._declarationBlockConfig)
@@ -663,12 +455,9 @@ export class BaseTypesVisitor<
   }
 
   getInputObjectOneOfDeclarationBlock(node: InputObjectTypeDefinitionNode): DeclarationBlock {
-    // As multiple fields always result in a union, we have
-    // to force a declaration kind of `type` in this case
-    const declarationKind = node.fields.length === 1 ? this._parsedConfig.declarationKind.input : 'type';
     return new DeclarationBlock(this._declarationBlockConfig)
       .export()
-      .asKind(declarationKind)
+      .asKind(this._parsedConfig.declarationKind.input)
       .withName(this.convertName(node))
       .withComment(node.description as any as string)
       .withContent(`\n` + node.fields.join('\n  |'));
@@ -717,7 +506,7 @@ export class BaseTypesVisitor<
     if (this.config.onlyOperationTypes || this.config.onlyEnums) return '';
     const originalNode = parent[key] as UnionTypeDefinitionNode;
     const possibleTypes = originalNode.types
-      .map(t => (this.scalars[t.name.value] ? this._getScalar(t.name.value, 'output') : this.convertName(t)))
+      .map(t => (this.scalars[t.name.value] ? this._getScalar(t.name.value) : this.convertName(t)))
       .join(' | ');
 
     return new DeclarationBlock(this._declarationBlockConfig)
@@ -835,18 +624,13 @@ export class BaseTypesVisitor<
     sourceIdentifier: string | null,
     sourceFile: string | null
   ): string[] {
-    if (importIdentifier !== sourceIdentifier) {
-      // use namespace import to dereference nested enum
-      // { enumValues: { MyEnum: './my-file#NS.NestedEnum' } }
-      return [
-        this._buildTypeImport(importIdentifier || sourceIdentifier, sourceFile),
-        `import ${typeIdentifier} = ${sourceIdentifier};`,
-      ];
+    const importStatement = this._buildTypeImport(importIdentifier || sourceIdentifier, sourceFile);
+
+    if (importIdentifier !== sourceIdentifier || sourceIdentifier !== typeIdentifier) {
+      return [importStatement, `import ${typeIdentifier} = ${sourceIdentifier};`];
     }
-    if (sourceIdentifier !== typeIdentifier) {
-      return [this._buildTypeImport(`${sourceIdentifier} as ${typeIdentifier}`, sourceFile)];
-    }
-    return [this._buildTypeImport(importIdentifier || sourceIdentifier, sourceFile)];
+
+    return [importStatement];
   }
 
   public getEnumsImports(): string[] {
@@ -876,19 +660,14 @@ export class BaseTypesVisitor<
     const enumName = node.name as any as string;
 
     // In case of mapped external enum string
-    if (this.config.enumValues[enumName]?.sourceFile) {
+    if (this.config.enumValues[enumName] && this.config.enumValues[enumName].sourceFile) {
       return null;
     }
 
     return new DeclarationBlock(this._declarationBlockConfig)
       .export()
       .asKind('enum')
-      .withName(
-        this.convertName(node, {
-          useTypesPrefix: this.config.enumPrefix,
-          useTypesSuffix: this.config.enumSuffix,
-        })
-      )
+      .withName(this.convertName(node, { useTypesPrefix: this.config.enumPrefix }))
       .withComment(node.description as any as string)
       .withBlock(this.buildEnumValuesBlock(enumName, node.values)).string;
   }
@@ -924,10 +703,11 @@ export class BaseTypesVisitor<
             ? schemaEnumType.getValue(enumOption.name as any).value
             : undefined;
         let enumValue: string | number =
-          typeof schemaEnumValue === 'undefined' ? (enumOption.name as any) : schemaEnumValue;
+          typeof schemaEnumValue !== 'undefined' ? schemaEnumValue : (enumOption.name as any);
 
         if (
-          this.config.enumValues[typeName]?.mappedValues &&
+          this.config.enumValues[typeName] &&
+          this.config.enumValues[typeName].mappedValues &&
           typeof this.config.enumValues[typeName].mappedValues[enumValue] !== 'undefined'
         ) {
           enumValue = this.config.enumValues[typeName].mappedValues[enumValue];
@@ -990,8 +770,8 @@ export class BaseTypesVisitor<
       .join('\n\n');
   }
 
-  protected _getScalar(name: string, type: 'input' | 'output'): string {
-    return `Scalars['${name}']['${type}']`;
+  protected _getScalar(name: string): string {
+    return `Scalars['${name}']`;
   }
 
   protected _getDirectiveArgumentNadInputFieldMapping(name: string): string {
@@ -1013,11 +793,11 @@ export class BaseTypesVisitor<
     return type || null;
   }
 
-  protected _getTypeForNode(node: NamedTypeNode, isVisitingInputType: boolean): string {
+  protected _getTypeForNode(node: NamedTypeNode): string {
     const typeAsString = node.name as any as string;
 
     if (this.scalars[typeAsString]) {
-      return this._getScalar(typeAsString, isVisitingInputType ? 'input' : 'output');
+      return this._getScalar(typeAsString);
     }
     if (this.config.enumValues[typeAsString]) {
       return this.config.enumValues[typeAsString].typeIdentifier;
@@ -1026,10 +806,7 @@ export class BaseTypesVisitor<
     const schemaType = this._schema.getType(node.name as any);
 
     if (schemaType && isEnumType(schemaType)) {
-      return this.convertName(node, {
-        useTypesPrefix: this.config.enumPrefix,
-        useTypesSuffix: this.config.enumSuffix,
-      });
+      return this.convertName(node, { useTypesPrefix: this.config.enumPrefix });
     }
 
     return this.convertName(node);
@@ -1038,7 +815,7 @@ export class BaseTypesVisitor<
   NamedType(node: NamedTypeNode, key, parent, path, ancestors): string {
     const currentVisitContext = this.getVisitorKindContextFromAncestors(ancestors);
     const isVisitingInputType = currentVisitContext.includes(Kind.INPUT_OBJECT_TYPE_DEFINITION);
-    const typeToUse = this._getTypeForNode(node, isVisitingInputType);
+    const typeToUse = this._getTypeForNode(node);
 
     if (!isVisitingInputType && this.config.fieldWrapperValue && this.config.wrapFieldDefinitions) {
       return `FieldWrapper<${typeToUse}>`;
@@ -1047,7 +824,7 @@ export class BaseTypesVisitor<
     return typeToUse;
   }
 
-  ListType(node: ListTypeNode, _key, _parent, _path, _ancestors): string {
+  ListType(node: ListTypeNode, key, parent, path, ancestors): string {
     const asString = node.type as any as string;
 
     return this.wrapWithListType(asString);

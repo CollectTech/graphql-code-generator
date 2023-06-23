@@ -1,14 +1,14 @@
 ---
 title: java-apollo-android
-description: GraphQL Code Generator plugin for generating Java code for Apollo Android.
 ---
 
-import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { Callout, PackageCmd } from '@theguild/components'
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('java-apollo-android')
+
+<PackageHeader />
 
 ## Prepare your env
 
@@ -19,11 +19,7 @@ To get started with these plugins and preset, make sure you have the following i
 
 Run the following in your Android project:
 
-```sh npm2yarn
-npm init --yes
-npm install graphql
-npm install -D @graphql-codegen/cli @graphql-codegen/java-apollo-android
-```
+<PackageCmd packages={[{ cmd: 'init' }, 'graphql', '-D @graphql-codegen/cli @graphql-codegen/java-apollo-android']} />
 
 Then, create `codegen.yml` with the following configuration:
 
@@ -60,4 +56,4 @@ This will make sure to run and generate output before each time you build your p
 
 You can find a [repository with a working example using AppSync](https://github.com/dotansimha/graphql-codegen-appsync-android-example).
 
-<PluginApiDocs />
+<PackageApiDocs />

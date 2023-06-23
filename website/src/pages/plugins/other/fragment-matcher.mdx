@@ -1,14 +1,14 @@
 ---
 title: fragment-matcher
-description: Generate fragment matcher for Apollo Client. This plugin is required for using fragments with Apollo Client.
 ---
 
 import { Callout, Tabs, Tab } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('fragment-matcher')
+
+<PackageHeader />
 
 ## How to use?
 
@@ -31,7 +31,7 @@ const cache = new InMemoryCache({ possibleTypes: generatedIntrospection.possible
 </Tab>
 
 <Tab>
-If you are using version 2 of Apollo-Client, you need to specify the `apolloClientVersion: 2{:ts}` configuration, and then use it like that:
+If you are using version 2 of Apollo-Client, you need to specify the `apolloClientVersion: 2{:yaml}` configuration, and then use it like that:
 
 ```ts
 import { InMemoryCache, IntrospectionFragmentMatcher } from 'apollo-cache-inmemory'
@@ -49,4 +49,4 @@ const cache = new InMemoryCache({ fragmentMatcher })
 </Tab>
 </Tabs>
 
-<PluginApiDocs />
+<PackageApiDocs />

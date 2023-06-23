@@ -1,14 +1,14 @@
 ---
 title: kotlin
-description: Kotlin plugin for GraphQL Code Generator. Generate Kotlin classes for Enums and Input types.
 ---
 
-import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { Callout, PackageCmd } from '@theguild/components'
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('kotlin')
+
+<PackageHeader />
 
 The `kotlin` plugin generates Kotlin `classes` for Enums and Input types.
 
@@ -23,11 +23,7 @@ To get started with these plugins and preset, make sure you have the following i
 
 Run the following in your Android project:
 
-```sh npm2yarn
-npm init --yes
-npm install graphql
-npm install -D @graphql-codegen/cli @graphql-codegen/kotlin
-```
+<PackageCmd packages={[{ cmd: 'init' }, 'graphql', '-D @graphql-codegen/cli @graphql-codegen/kotlin']} />
 
 Then, create `codegen.yml` with the following configuration:
 
@@ -42,4 +38,4 @@ generates:
 
 <Callout>Also, make sure to add `node_modules` to your `.gitignore` file.</Callout>
 
-<PluginApiDocs />
+<PackageApiDocs />

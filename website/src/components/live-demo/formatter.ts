@@ -1,6 +1,6 @@
 import { extname } from 'path';
 
-export type Config = {
+type Config = {
   generates: Record<
     string,
     {
@@ -9,7 +9,6 @@ export type Config = {
       presetConfig?: {
         baseTypesPath: string;
         extension: string;
-        typesPath: string;
       };
     }
   >;

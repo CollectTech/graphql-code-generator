@@ -4,27 +4,24 @@
   "private": true,
   "scripts": {
     "start:cjs": "tsup --onSuccess \"node dist/index.js\"",
-    "start:mjs": "tsup --onSuccess \"node dist/index.mjs\"",
-    "codegen": "exit 0",
-    "build": "yarn start:cjs && yarn start:mjs",
-    "test:end2end": "exit 0"
+    "start:mjs": "tsup --onSuccess \"node dist/index.mjs\""
   },
   "dependencies": {
-    "@graphql-codegen/core": "4.0.0",
-    "@graphql-codegen/plugin-helpers": "5.0.0",
-    "@graphql-codegen/typed-document-node": "5.0.1",
-    "@graphql-codegen/typescript": "4.0.1",
-    "@graphql-codegen/typescript-operations": "4.0.1",
-    "@graphql-codegen/typescript-resolvers": "4.0.1",
-    "@graphql-tools/graphql-file-loader": "8.0.0",
-    "@graphql-tools/load": "8.0.0",
-    "@graphql-tools/schema": "10.0.0",
-    "graphql": "16.6.0",
+    "@graphql-codegen/core": "*",
+    "@graphql-codegen/plugin-helpers": "*",
+    "@graphql-codegen/typed-document-node": "*",
+    "@graphql-codegen/typescript": "*",
+    "@graphql-codegen/typescript-operations": "*",
+    "@graphql-codegen/typescript-resolvers": "*",
+    "@graphql-tools/graphql-file-loader": "7.5.0",
+    "@graphql-tools/load": "7.7.0",
+    "@graphql-tools/schema": "8.5.0",
+    "graphql": "16.5.0",
     "graphql-tag": "2.12.6",
-    "prettier": "2.8.8"
+    "prettier": "2.7.1"
   },
   "devDependencies": {
-    "@types/node": "18.16.16",
-    "tsup": "6.7.0"
+    "@types/node": "16.11.43",
+    "tsup": "6.1.3"
   }
 }

@@ -1,20 +1,20 @@
-import { TypeScriptOperationVariablesToObject } from '@graphql-codegen/typescript';
+import { TypeScriptResolversPluginConfig } from './config.js';
 import {
-  BaseResolversVisitor,
-  DeclarationKind,
-  getConfigValue,
-  ParsedResolversConfig,
-} from '@graphql-codegen/visitor-plugin-common';
-import autoBind from 'auto-bind';
-import {
-  EnumTypeDefinitionNode,
   FieldDefinitionNode,
-  GraphQLSchema,
   ListTypeNode,
   NamedTypeNode,
   NonNullTypeNode,
+  GraphQLSchema,
+  EnumTypeDefinitionNode,
 } from 'graphql';
-import { TypeScriptResolversPluginConfig } from './config.js';
+import autoBind from 'auto-bind';
+import {
+  ParsedResolversConfig,
+  BaseResolversVisitor,
+  getConfigValue,
+  DeclarationKind,
+} from '@graphql-codegen/visitor-plugin-common';
+import { TypeScriptOperationVariablesToObject } from '@graphql-codegen/typescript';
 
 export const ENUM_RESOLVERS_SIGNATURE =
   'export type EnumResolverSignature<T, AllowedValues = any> = { [key in keyof T]?: AllowedValues };';
@@ -52,7 +52,6 @@ export class TypeScriptResolversVisitor extends BaseResolversVisitor<
         this.config.namespacedImportName,
         [],
         this.config.enumPrefix,
-        this.config.enumSuffix,
         this.config.enumValues
       )
     );
@@ -75,10 +74,7 @@ export class TypeScriptResolversVisitor extends BaseResolversVisitor<
   }
 
   protected formatRootResolver(schemaTypeName: string, resolverType: string, declarationKind: DeclarationKind): string {
-    const avoidOptionals =
-      typeof this.config.avoidOptionals === 'object'
-        ? this.config.avoidOptionals?.resolvers
-        : !!this.config.avoidOptionals === true;
+    const avoidOptionals = this.config.avoidOptionals?.resolvers ?? this.config.avoidOptionals === true;
     return `${schemaTypeName}${avoidOptionals ? '' : '?'}: ${resolverType}${this.getPunctuation(declarationKind)}`;
   }
 

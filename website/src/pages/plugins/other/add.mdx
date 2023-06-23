@@ -1,13 +1,13 @@
 ---
 title: add
-description: Adds custom text to your output file. You can use this plugin to add custom code, imports, comments and more to your output file.
 ---
 
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('add')
+
+<PackageHeader />
 
 `add` plugin adds custom text to your output file.
 
@@ -15,52 +15,28 @@ You can use this plugin to add custom code, imports, comments and more to your o
 
 ## Examples
 
-```ts filename="codegen.ts" {8-10}
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  generates: {
-    'path/to/file.ts': {
-      plugins: [
-        {
-          add: {
-            content: '/* eslint-disable */'
-          }
-        },
-        'typescript'
-      ]
-    }
-  }
-}
-export default config
+```yaml {5-6}
+# …
+generates:
+  path/to/file.ts:
+    plugins:
+      - add:
+          content: '/* eslint-disable */'
+      - typescript
 ```
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  generates: {
-    'path/to/file.ts': {
-      plugins: [
-        {
-          add: {
-            content: ['declare namespace GraphQL {']
-          }
-        },
-        {
-          add: {
-            placement: 'append',
-            content: '}'
-          }
-        },
-        'typescript'
-      ]
-    }
-  }
-}
-export default config
+```yaml {5-10}
+# …
+generates:
+  path/to/file.ts:
+    plugins:
+      - add:
+          content:
+            - 'declare namespace GraphQL {'
+      - add:
+          placement: 'append'
+          content: '}'
+      - typescript
 ```
 
-<PluginApiDocs />
+<PackageApiDocs />

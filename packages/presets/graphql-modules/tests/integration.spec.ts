@@ -1,6 +1,6 @@
-import { normalize } from 'path';
-import { executeCodegen } from '@graphql-codegen/cli';
 import { useMonorepo } from '@graphql-codegen/testing';
+import { executeCodegen } from '@graphql-codegen/cli';
+import { normalize } from 'path';
 
 const monorepo = useMonorepo({
   dirname: __dirname,
@@ -11,7 +11,7 @@ const options = {
     './tests/test-files/modules': {
       schema: './tests/test-files/modules/*/types/*.graphql',
       plugins: ['typescript', 'typescript-resolvers'],
-      preset: 'graphql-modules' as const,
+      preset: 'graphql-modules',
       presetConfig: {
         baseTypesPath: 'global-types.ts',
         filename: 'module-types.ts',
@@ -25,31 +25,41 @@ describe('Integration', () => {
   monorepo.correctCWD();
 
   beforeEach(() => {
-    jest.useFakeTimers({
-      legacyFakeTimers: true,
-    });
+    jest.useFakeTimers('legacy');
   });
 
   // In this test, we make sure executeCodegen passes on a list of Sources as an extension
   // This is very important
   test('should generate a base output and 4 for modules', async () => {
-    const output = await executeCodegen(options);
+    try {
+      const output = await executeCodegen(options);
 
-    expect(output.length).toBe(5);
-    expect(normalize(output[0].filename)).toMatch(normalize(`/modules/global-types.ts`));
-    expect(normalize(output[1].filename)).toMatch(normalize(`/modules/blog/module-types.ts`));
-    expect(normalize(output[2].filename)).toMatch(normalize(`/modules/common/module-types.ts`));
-    expect(normalize(output[3].filename)).toMatch(normalize(`/modules/dotanions/module-types.ts`));
-    expect(normalize(output[4].filename)).toMatch(normalize(`/modules/users/module-types.ts`));
+      expect(output.length).toBe(5);
+      expect(normalize(output[0].filename)).toMatch(normalize(`/modules/global-types.ts`));
+      expect(normalize(output[1].filename)).toMatch(normalize(`/modules/blog/module-types.ts`));
+      expect(normalize(output[2].filename)).toMatch(normalize(`/modules/common/module-types.ts`));
+      expect(normalize(output[3].filename)).toMatch(normalize(`/modules/dotanions/module-types.ts`));
+      expect(normalize(output[4].filename)).toMatch(normalize(`/modules/users/module-types.ts`));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      throw e;
+    }
   });
 
   test('should not duplicate type even if type and extend type are in the same module', async () => {
-    const output = await executeCodegen(options);
+    try {
+      const output = await executeCodegen(options);
 
-    const userResolversStr = `export type UserResolvers = Pick<Types.UserResolvers, DefinedFields['User'] | '__isTypeOf'>;`;
-    const nbOfTimeUserResolverFound = output[4].content.split(userResolversStr).length - 1;
+      const userResolversStr = `export type UserResolvers = Pick<Types.UserResolvers, DefinedFields['User'] | '__isTypeOf'>;`;
+      const nbOfTimeUserResolverFound = output[4].content.split(userResolversStr).length - 1;
 
-    expect(nbOfTimeUserResolverFound).toBe(1);
+      expect(nbOfTimeUserResolverFound).toBe(1);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      throw e;
+    }
   });
 
   test('should allow to override importBaseTypesFrom correctly', async () => {
@@ -69,35 +79,6 @@ describe('Integration', () => {
       },
     });
     const importStatement = `import * as Types from "@types";`;
-
-    expect(output.length).toBe(5);
-    expect(output[1].content).toMatch(importStatement);
-    expect(output[2].content).toMatch(importStatement);
-    expect(output[3].content).toMatch(importStatement);
-    expect(output[4].content).toMatch(importStatement);
-  });
-
-  test('should import with respect of useTypeImports config correctly', async () => {
-    const output = await executeCodegen({
-      generates: {
-        './tests/test-files/modules': {
-          schema: './tests/test-files/modules/*/types/*.graphql',
-          plugins: ['typescript', 'typescript-resolvers'],
-          preset: 'graphql-modules',
-          presetConfig: {
-            importBaseTypesFrom: '@types',
-            baseTypesPath: 'global-types.ts',
-            filename: 'module-types.ts',
-            encapsulateModuleTypes: 'none',
-          },
-        },
-      },
-      config: {
-        useTypeImports: true,
-      },
-    });
-
-    const importStatement = `import type * as Types from "@types";`;
 
     expect(output.length).toBe(5);
     expect(output[1].content).toMatch(importStatement);

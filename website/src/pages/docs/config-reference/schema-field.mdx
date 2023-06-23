@@ -1,7 +1,3 @@
----
-description: How to specify your GraphQL Schema in GraphQL Code Generator. Learn how to load your schema from a remote server, local file, or multiple files.
----
-
 import { Callout } from '@theguild/components'
 
 # `schema` field
@@ -16,62 +12,42 @@ The `schema` field should point to your `GraphQLSchema` - there are multiple way
 
 You can specify the `schema` field in your root level config, as follows:
 
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'http://localhost:3000/graphql',
-  generates: {
-    './src/types.ts': {
-      plugins: ['typescript']
-    }
-  }
-};
-export default config;
-
+```yaml {1}
+schema: http://localhost:3000/graphql
+generates:
+  ./src/types.ts:
+    plugins:
+      - typescript
 ```
 
 ### Output-file level
 
 Or, you can specify it per-output file level. This way you can
 
-```ts {6,10}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  generates: {
-    './src/types1.ts': {
-      schema: 'http://server1.com/graphql',
-      plugins: ['typescript']
-    },
-    './src/types2.ts': {
-      schema: 'http://server2.com/graphql',
-      plugins: ['typescript']
-    }
-  },
-};
-export default config;
-
+```yaml {3,7}
+generates:
+  ./src/types1.ts:
+    schema: http://server1.com/graphql
+    plugins:
+      - typescript
+  ./src/types2.ts:
+    schema: http://server2.com/graphql
+    plugins:
+      - typescript
 ```
 
 ### Multiple schemas and client-side schema
 
 You can also specify `schema` on both levels: root and output-file, and then GraphQL Code Generator will merge both schemas into one:
 
-```ts {4,7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'http://localhost:3000/graphql',
-  generates: {
-    './src/types.ts': {
-      schema: './schema.graphql',
-      plugins: ['typescript', 'typescript-operations']
-    }
-  }
-};
-export default config;
-
+```yaml {1,4}
+schema: http://localhost:3000/graphql
+generates:
+  ./src/types.ts:
+    schema: ./schema.graphql
+    plugins:
+      - typescript
+      - typescript-operations
 ```
 
 <Callout>
@@ -86,14 +62,8 @@ The following can be specified as a single value or an array with mixed values.
 
 You can specify a URL to load your `GraphQLSchema` from:
 
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'http://localhost:3000/graphql',
-  // ...
-};
-export default config;
+```yaml
+schema: http://localhost:3000/graphql
 ```
 
 #### Supported Configuration
@@ -102,154 +72,71 @@ export default config;
 
 You can also specify custom HTTP headers to be sent with the request:
 
-```ts {7-9}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      'http://localhost:3000/graphql': {
-        headers: {
-          Authorization: 'YOUR-TOKEN-HERE',
-        },
-      },
-    },
-  ],
-};
-export default config;
-
+```yaml {3-4}
+schema:
+  - http://localhost:3000/graphql:
+      headers:
+        Authorization: YOUR-TOKEN-HERE
 ```
+
+<Callout>**Spacing and indentation are important in YAML**, make sure it matches the examples above.</Callout>
 
 ##### `customFetch`
 
 You can specify a custom fetch function for the HTTP request, using the module name you wish to use:
 
-
-
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      'http://localhost:3000/graphql': {
-        customFetch: 'my-custom-fetch',
-      }
-    }
-  ]
-};
-export default config;
+```yaml {3}
+schema:
+  - http://localhost:3000/graphql:
+      customFetch: 'my-custom-fetch'
 ```
-
 
 ##### `method`
 
 You can specify an HTTP method for the introspection query (the default value is `POST`).
 
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      'http://localhost:3000/graphql': {
-        method: 'GET',
-      }
-    }
-  ]
-};
-export default config;
-
-```
-
-##### `handleAsSDL`
-
-Handling the response as SDL will allow you to load schema from remote server that doesn't return a JSON introspection. Example use case is when using schema registry like [GraphQL Hive](https://docs.graphql-hive.com/features/high-availability-cdn#graphql-schema-sdl).
-
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      'http://localhost:3000/sdl': {
-        handleAsSDL: true,
-      }
-    }
-  ]
-};
-export default config;
-
+```yaml {3}
+schema:
+  - http://localhost:3000/graphql:
+      method: GET
 ```
 
 ### JSON
 
 You can point to a local `.json` file that contains [GraphQL Introspection](https://graphql.org/learn/introspection) JSON.
 
-
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'schema.json',
-  // ...
-};
-export default config;
+```yaml
+schema: schema.json
 ```
-
 
 ### Local `.graphql` files
 
 You can point to a single `.graphql` file that contains the AST string of your schema:
 
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'schema.graphql',
-  // ...
-};
-export default config;
+```yaml
+schema: schema.graphql
 ```
 
 Or, you can point to multiple files using a glob expression (codegen will merge the schema files for you):
 
-
-
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'src/**/*.graphql',
-  // ...
-};
-export default config;
+```yaml
+schema: 'src/**/*.graphql'
 ```
 
 You can also specify multiple patterns:
 
-
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: ['src/dir1/**/*.graphql', 'src/dir2/**/*.graphql'],
-  // ...
-};
-export default config;
+```yaml
+schema:
+  - 'src/dir1/**/*.graphql'
+  - 'src/dir2/**/*.graphql'
 ```
-
 
 And, you can specify files to exclude/ignore, using the `!` sign:
 
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: ['src/**/*.graphql', '!*.generated.graphql'],
-  // ...
-};
-export default config;
+```yaml {3}
+schema:
+  - './src/**/*.graphql'
+  - '!*.generated.graphql'
 ```
 
 <Callout>All provided glob expressions are evaluated together. The usage is similar to `.gitignore`.</Callout>
@@ -262,76 +149,38 @@ By default, codegen skips `graphql-import` to load all files using glob expressi
 
 If you are using `graphql-import` syntax in your schema definitions, you can tell codegen to use those import statements:
 
-
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      './src/**/*.ts': {
-        skipGraphQLImport: true
-      },
-    },
-  ],
-};
-export default config;
+```yaml {3}
+schema:
+  - 'src/dir1/**/*.graphql':
+      skipGraphQLImport: false
 ```
-
 
 ##### `commentDescriptions`
 
 When enabled, converts all deprecated forms of GraphQL comments (marked with `#`) into a GraphQL description (marked with `"`) during the parsing phase.
 
-
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      './src/**/*.ts': {
-        commentDescriptions: true
-      },
-    },
-  ],
-};
-export default config;
+```yaml {3}
+schema:
+  - 'src/dir1/**/*.graphql':
+      commentDescriptions: true
 ```
-
-
 
 ##### `assumeValidSDL`
 
 Set to true to assume the SDL is valid, and skip any SDL syntax validations.
 
-
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      './src/**/*.ts': {
-        assumeValidSDL: true
-      },
-    },
-  ],
-};
-export default config;
+```yaml {3}
+schema:
+  - 'src/dir1/**/*.graphql':
+      assumeValidSDL: true
 ```
 
 ### Code Files
 
 You can use code files, and the codegen will try to extract the GraphQL schema from it, based on `gql` tag:
 
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: './src/**/*.ts'
-};
-export default config;
+```yaml
+schema: './src/**/*.ts'
 ```
 
 The codegen will try to load the file as an AST and look for exact GraphQL strings, but if it can't find those, it will try to `require` the file and looks for operations in the default export.
@@ -342,74 +191,40 @@ The codegen will try to load the file as an AST and look for exact GraphQL strin
 
 You can disable the `require` if it causes errors for you (for example, because of a different module system or missing dependency):
 
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      './src/**/*.ts': {
-        noRequire: true,
-      },
-    },
-  ],
-};
-export default config;
+```yaml {3}
+schema:
+  - './src/**/*.ts':
+      noRequire: true
 ```
 
 ##### `noPluck`
 
 You can disable the AST lookup phase and tell codegen to skip and directly try to `require` each file:
 
-
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      './src/**/*.ts': {
-        noPluck: true,
-      },
-    },
-  ],
-};
-export default config;
+```yaml {3}
+schema:
+  - './src/**/*.ts':
+      noPluck: true
 ```
 
 ##### `assumeValid`
 
 Set this to `true` to tell codegen to skip AST validation.
 
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      './src/**/*.ts': {
-        assumeValid: true,
-      },
-    },
-  ],
-};
-export default config;
+```yaml {3}
+schema:
+  - './src/**/*.ts':
+      assumeValid: true
 ```
 
 ### JavaScript export
 
 You can also specify a code file that exports your `GraphQLSchema` object as export `schema` or as default export.
 
-
-
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'schema.js'
-};
-export default config;
+```yaml
+schema: schema.js
 ```
+
 ```js
 const { buildSchema } = require('graphql')
 
@@ -432,60 +247,16 @@ module.exports = buildSchema(/* GraphQL */ `
 
 You can specify your schema directly as an AST string in your config file. It's handy for testing.
 
-
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'type MyType { foo: String } type Query { myType: MyType }'
-};
-export default config;
+```yaml
+schema: 'type MyType { foo: String } type Query { myType: MyType }'
 ```
-
 
 ### GitHub
 
-You can load your schema file from a remote GitHub file using one of the following approaches:
+You can load your schema file from a remote GitHub file, using the following syntax:
 
-#### Provide GitHub token in Codegen Config
-
-Provide the GitHub path to your schema and token using the following syntax:
-
-```ts {4,5,6,7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: {
-    'github:user/repo#branchName:path/to/file.graphql':
-      { token: "<YOUR GITHUB TOKEN>" }
-  }
-};
-export default config;
-```
-
-Then, run codegen:
-
-```bash
-yarn graphql-codegen
-```
-
-#### Provide GitHub token via Codegen CLI
-
-Alternatively, you can provide just the GitHub path to your schema:
-
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'github:user/repo#branchName:path/to/file.graphql'
-};
-export default config;
-```
-
-Then, provide your GitHub token using the `GITHU_TOKEN` environment variable when running codegen:
-
-```bash
-GITHUB_TOKEN=<YOUR GITHUB TOKEN> yarn graphql-codegen
+```yaml
+schema: github:user/repo#branchName:path/to/file.graphql
 ```
 
 <Callout>You can load from a JSON file, `.graphql` file, or from a code file containing `gql` tag syntax.</Callout>
@@ -494,13 +265,8 @@ GITHUB_TOKEN=<YOUR GITHUB TOKEN> yarn graphql-codegen
 
 You can load your schema file from a Git repository using the following syntax:
 
-```ts {4}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: 'git:branch:path/to/file.graphql'
-};
-export default config;
+```yaml
+schema: git:branch:path/to/file.graphql
 ```
 
 <Callout>You can load from a JSON file, `.graphql` file, or from a code file containing `gql` tag syntax.</Callout>
@@ -509,49 +275,25 @@ export default config;
 
 You can load your schema from Apollo Engine with the following syntax:
 
-```ts
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      'apollo-engine': {
-        engine: {
-          apiKey: 'APOLLO_ENGINE_KEY_ID',
-        },
-        graph: 'GRAPH_ID',
-        variant: 'current',
-      }
-    }
-  ]
-};
-export default config;
-
+```yaml
+schema:
+  - apollo-engine:
+      engine:
+        apiKey: APOLLO_ENGINE_KEY_ID
+      graph: GRAPH_ID
+      variant: current
 ```
 
 ## Custom Schema Loader
 
 If your schema has a different or complicated way of loading, you can point to a single code file that works for you.
 
-```ts {7,12}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      'http://localhost:3000/graphql': {
-        loader: './my-url-loader.js',
-      }
-    },
-    {
-      'schema.graphql': {
-        loader: './my-file-loader.js',
-      }
-    }
-  ],
-};
-export default config;
-
+```yaml {3,5}
+schema:
+  - http://localhost:3000/graphql:
+      loader: ./my-url-loader.js
+  - schema.graphql:
+      loader: ./my-file-loader.js
 ```
 
 Your custom loader should export a default function that returns `GraphQLSchema` object, or an identifier called `schema`. For example:
@@ -608,20 +350,10 @@ export default async () => {
 
 Add custom loader to your codegen config:
 
-```ts {7}
-import { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: [
-    {
-      'my-api': {
-        loader: './codegen-loader.ts'
-      }
-    }
-  ]
-};
-export default config;
-
+```yaml {3}
+schema:
+  - my-api:
+      loader: ./codegen-loader.ts
 ```
 
 Finally, make sure that you have installed `ts-node`, so TypeScript file can be transpiled before running codegen.

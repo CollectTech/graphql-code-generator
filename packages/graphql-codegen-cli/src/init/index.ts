@@ -1,9 +1,9 @@
-import { Types } from '@graphql-codegen/plugin-helpers';
 import inquirer from 'inquirer';
-import { bold, writeConfig, writePackage } from './helpers.js';
+import { Types } from '@graphql-codegen/plugin-helpers';
 import { getQuestions } from './questions.js';
 import { guessTargets } from './targets.js';
 import { Answers, Tags } from './types.js';
+import { writeConfig, writePackage, bold } from './helpers.js';
 
 function log(...msgs: string[]) {
   // eslint-disable-next-line no-console
@@ -24,15 +24,10 @@ export async function init() {
   const config: Types.Config = {
     overwrite: true,
     schema: answers.schema,
-    ...(answers.targets.includes(Tags.client) ||
-    answers.targets.includes(Tags.angular) ||
-    answers.targets.includes(Tags.stencil)
-      ? { documents: answers.documents }
-      : {}),
+    documents: answers.targets.includes(Tags.browser) ? answers.documents : null,
     generates: {
       [answers.output]: {
-        ...(answers.targets.includes(Tags.client) ? { preset: 'client' } : {}),
-        plugins: answers.plugins ? answers.plugins.map(p => p.value) : [],
+        plugins: answers.plugins.map(p => p.value),
       },
     },
   };
@@ -53,7 +48,7 @@ export async function init() {
   // Emit status to the terminal
   log(`
     Config file generated at ${bold(relativePath)}
-
+    
       ${bold('$ npm install')}
 
     To install the plugins.

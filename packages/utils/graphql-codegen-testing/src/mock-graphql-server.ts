@@ -1,6 +1,6 @@
 import { GraphQLSchema } from 'graphql';
-import { getGraphQLParameters, processRequest as processGraphQLHelixRequest } from 'graphql-helix';
 import nock from 'nock';
+import { getGraphQLParameters, processRequest as processGraphQLHelixRequest } from 'graphql-helix';
 
 export function mockGraphQLServer({
   schema,
@@ -21,9 +21,7 @@ export function mockGraphQLServer({
     }
     const uriObj = new URL(host + uri);
     const queryObj: any = {};
-    for (const [key, val] of uriObj.searchParams.entries()) {
-      queryObj[key] = val;
-    }
+    uriObj.searchParams.forEach((val, key) => (queryObj[key] = val));
     // Create a generic Request object that can be consumed by Graphql Helix's API
     const request = {
       body,
@@ -49,9 +47,7 @@ export function mockGraphQLServer({
     if (result.type === 'RESPONSE') {
       const headers = {};
       // We set the provided status and headers and just the send the payload back to the client
-      for (const { name, value } of result.headers) {
-        headers[name] = value;
-      }
+      result.headers.forEach(({ name, value }) => (headers[name] = value));
       return [result.status, result.payload, headers];
     }
     return [500, 'Not implemented'];

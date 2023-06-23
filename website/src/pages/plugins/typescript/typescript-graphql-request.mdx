@@ -1,18 +1,18 @@
 ---
 title: typescript-graphql-request
-description: GraphQL Code Generator plugin for generating TypeScript code using graphql-request. This plugin generates a fully-typed SDK based on your GraphQL operations.
 ---
 
 import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNote: true })
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('typescript-graphql-request')
+
+<PackageHeader hasOperationsNote />
 
 <Callout>Make sure you have `typescript` plugin and `typescript-operations` as well in your configuration:</Callout>
 
-<PluginApiDocs />
+<PackageApiDocs />
 
 ## Usage Example
 

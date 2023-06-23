@@ -1,7 +1,8 @@
-import { createContext } from './config.js';
 import { generate } from './generate-and-save.js';
-import { lifecycleHooks } from './hooks.js';
 import { init } from './init/index.js';
+import { createContext } from './config.js';
+import { lifecycleHooks } from './hooks.js';
+import { DetailedError } from '@graphql-codegen/plugin-helpers';
 
 export async function runCli(cmd: string): Promise<number> {
   await ensureGraphQlPackage();
@@ -32,12 +33,14 @@ export async function ensureGraphQlPackage() {
   try {
     await import('graphql');
   } catch (e) {
-    throw new Error(
-      `Unable to load "graphql" package. Please make sure to install "graphql" as a dependency! \n
-       To install "graphql", run:
-         yarn add graphql
-       Or, with NPM:
-         npm install --save graphql`
+    throw new DetailedError(
+      `Unable to load "graphql" package. Please make sure to install "graphql" as a dependency!`,
+      `
+  To install "graphql", run:
+    yarn add graphql
+  Or, with NPM:
+    npm install --save graphql
+`
     );
   }
 }

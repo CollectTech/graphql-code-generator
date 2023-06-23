@@ -1,7 +1,3 @@
----
-description: Learn how to configure GraphQL Code Generator to fit your needs. The `config` field is used to pass configuration to Plugins.
----
-
 import { Callout } from '@theguild/components'
 
 # `config` field
@@ -14,36 +10,29 @@ The `config` field is used to pass configuration to Plugins.
 
 If you specify it in your root level, the options will be passed to every plugin for each output file:
 
-```ts {5}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'schema.graphql',
-  config: { configKey: 'configValue' },
-  generates: { 'output.ts': ['plugin1', 'plugin2'] }
-}
-export default config
+```yaml {2-3}
+schema: schema.graphql
+config:
+  configKey: configValue
+generates:
+  output.ts:
+    - plugin1
+    - plugin2
 ```
 
 ### Output Level
 
 If you specify it at the output file level, every plugin for specific output will get the config value:
 
-```ts {7-9}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'schema.graphql',
-  generates: {
-    'output.ts': {
-      config: {
-        configKey: 'configValue'
-      },
-      plugins: ['plugin1', 'plugin2']
-    }
-  }
-}
-export default config
+```yaml {4-5}
+schema: schema.graphql
+generates:
+  output.ts:
+    config:
+      configKey: configValue
+    plugins:
+      - plugin1
+      - plugin2
 ```
 
 <Callout>Output level configuration overrides root-level configuration.</Callout>
@@ -52,23 +41,14 @@ export default config
 
 If you specify it at the plugin level, only that plugin will get the config value:
 
-```ts {8,11}
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'schema.graphql',
-  generates: {
-    'output.ts': [
-      {
-        plugin1: { configKey: 'configValue' }
-      },
-      {
-        plugin2: { configKey: 'otherValue' }
-      }
-    ]
-  }
-}
-export default config
+```yaml {5,7}
+schema: schema.graphql
+generates:
+  output.ts:
+    - plugin1:
+        configKey: configValue
+    - plugin2:
+        configKey: otherValue
 ```
 
 <Callout>Plugin level configuration overrides output-level and root-level configuration.</Callout>

@@ -1,8 +1,8 @@
 import { oldVisit, PluginFunction, Types } from '@graphql-codegen/plugin-helpers';
-import { LoadedFragment, optimizeOperations } from '@graphql-codegen/visitor-plugin-common';
-import { concatAST, FragmentDefinitionNode, GraphQLSchema, Kind } from 'graphql';
-import { TypeScriptDocumentsPluginConfig } from './config.js';
+import { concatAST, GraphQLSchema, Kind, FragmentDefinitionNode } from 'graphql';
 import { TypeScriptDocumentsVisitor } from './visitor.js';
+import { LoadedFragment, optimizeOperations } from '@graphql-codegen/visitor-plugin-common';
+import { TypeScriptDocumentsPluginConfig } from './config.js';
 
 export { TypeScriptDocumentsPluginConfig } from './config.js';
 
@@ -41,11 +41,11 @@ export const plugin: PluginFunction<TypeScriptDocumentsPluginConfig, Types.Compl
   if (config.addOperationExport) {
     const exportConsts = [];
 
-    for (const d of allAst.definitions) {
+    allAst.definitions.forEach(d => {
       if ('name' in d) {
         exportConsts.push(`export declare const ${d.name.value}: import("graphql").DocumentNode;`);
       }
-    }
+    });
 
     content = visitorResult.definitions.concat(exportConsts).join('\n');
   }

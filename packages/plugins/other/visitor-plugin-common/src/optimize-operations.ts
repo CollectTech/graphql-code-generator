@@ -1,6 +1,6 @@
 import { Types } from '@graphql-codegen/plugin-helpers';
-import { optimizeDocuments } from '@graphql-tools/relay-operation-optimizer';
 import { GraphQLSchema } from 'graphql';
+import { optimizeDocuments } from '@graphql-tools/relay-operation-optimizer';
 
 export function optimizeOperations(
   schema: GraphQLSchema,

@@ -1,18 +1,18 @@
-import autoBind from 'auto-bind';
-import { ASTNode, FragmentDefinitionNode, OperationDefinitionNode } from 'graphql';
-import { FragmentImport, ImportDeclaration } from './imports.js';
-import { convertFactory } from './naming.js';
 import {
+  ScalarsMap,
+  ParsedScalarsMap,
+  NamingConvention,
   ConvertFn,
   ConvertOptions,
-  DeclarationKind,
   LoadedFragment,
-  NamingConvention,
   NormalizedScalarsMap,
-  ParsedScalarsMap,
-  ScalarsMap,
+  DeclarationKind,
 } from './types.js';
 import { DeclarationBlockConfig } from './utils.js';
+import autoBind from 'auto-bind';
+import { convertFactory } from './naming.js';
+import { ASTNode, FragmentDefinitionNode, OperationDefinitionNode } from 'graphql';
+import { ImportDeclaration, FragmentImport } from './imports.js';
 
 export interface BaseVisitorConvertOptions {
   useTypesPrefix?: boolean;
@@ -47,21 +47,9 @@ export interface RawConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          strictScalars: true,
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {2}
+   * config:
+   *   strictScalars: true
    * ```
    */
   strictScalars?: boolean;
@@ -70,21 +58,9 @@ export interface RawConfig {
    * @default any
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          defaultScalarType: 'unknown'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {2}
+   * config:
+   *   defaultScalarType: unknown
    * ```
    */
   defaultScalarType?: string;
@@ -92,28 +68,11 @@ export interface RawConfig {
    * @description Extends or overrides the built-in scalars and custom GraphQL scalars to a custom type.
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          scalars: {
-   *            ID: {
-   *              input: 'string',
-   *              output: 'string | number'
-   *            }
-   *            DateTime: 'Date',
-   *            JSON: '{ [key: string]: any }',
-   *          }
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   scalars:
+   *     DateTime: Date
+   *     JSON: "{ [key: string]: any }"
    * ```
    */
   scalars?: ScalarsMap;
@@ -132,81 +91,31 @@ export interface RawConfig {
    *
    * @exampleMarkdown
    * ## Override All Names
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          namingConvention: 'change-case-all#lowerCase',
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   namingConvention: change-case-all#lowerCase
    * ```
    *
    * ## Upper-case enum values
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          namingConvention: {
-   *            typeNames: 'change-case-all#pascalCase',
-   *            enumValues: 'change-case-all#upperCase',
-   *          }
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   namingConvention:
+   *     typeNames: change-case-all#pascalCase
+   *     enumValues: change-case-all#upperCase
    * ```
    *
    * ## Keep names as is
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *         namingConvention: 'keep',
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   namingConvention: keep
    * ```
    *
    * ## Remove Underscores
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          namingConvention: {
-   *            typeNames: 'change-case-all#pascalCase',
-   *            transformUnderscore: true
-   *          }
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   namingConvention:
+   *     typeNames: change-case-all#pascalCase
+   *     transformUnderscore: true
    * ```
    */
   namingConvention?: NamingConvention;
@@ -215,21 +124,9 @@ export interface RawConfig {
    * @description Prefixes all the generated types.
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          typesPrefix: 'I',
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {2}
+   * config:
+   *   typesPrefix: I
    * ```
    */
   typesPrefix?: string;
@@ -238,21 +135,9 @@ export interface RawConfig {
    * @description Suffixes all the generated types.
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          typesSuffix: 'I',
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {2}
+   * config:
+   *   typesSuffix: I
    * ```
    */
   typesSuffix?: string;
@@ -261,21 +146,9 @@ export interface RawConfig {
    * @description Does not add `__typename` to the generated types, unless it was specified in the selection set.
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          skipTypename: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   skipTypename: true
    * ```
    */
   skipTypename?: boolean;
@@ -285,21 +158,9 @@ export interface RawConfig {
    * in the selection set, and makes it non-optional
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          nonOptionalTypename: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {2}
+   * config:
+   *   nonOptionalTypename: true
    * ```
    */
   nonOptionalTypename?: boolean;
@@ -310,22 +171,10 @@ export interface RawConfig {
    * @description Will use `import type {}` rather than `import {}` when importing only types. This gives
    * compatibility with TypeScript's "importsNotUsedAsValues": "error" option
    *
-   * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          useTypeImports: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * @example
+   * ```yaml {2}
+   * config:
+   *   useTypeImports: true
    * ```
    */
   useTypeImports?: boolean;
@@ -349,7 +198,6 @@ export interface RawConfig {
    * Instead - all of them are imported to the Operation node.
    * @type boolean
    * @default false
-   * @deprecated This option is no longer needed. It will be removed in the next major version.
    */
   dedupeFragments?: boolean;
   /**
@@ -397,12 +245,9 @@ export class BaseVisitor<TRawConfig extends RawConfig = RawConfig, TPluginConfig
     };
 
     this.scalars = {};
-    for (const key of Object.keys(this.config.scalars || {})) {
-      this.scalars[key] = {
-        input: this.config.scalars[key]?.input?.type,
-        output: this.config.scalars[key]?.output?.type,
-      };
-    }
+    Object.keys(this.config.scalars || {}).forEach(key => {
+      this.scalars[key] = this.config.scalars[key].type;
+    });
 
     autoBind(this);
   }
@@ -420,8 +265,8 @@ export class BaseVisitor<TRawConfig extends RawConfig = RawConfig, TPluginConfig
   }
 
   public convertName(node: ASTNode | string, options?: BaseVisitorConvertOptions & ConvertOptions): string {
-    const useTypesPrefix = typeof options?.useTypesPrefix === 'boolean' ? options.useTypesPrefix : true;
-    const useTypesSuffix = typeof options?.useTypesSuffix === 'boolean' ? options.useTypesSuffix : true;
+    const useTypesPrefix = typeof (options && options.useTypesPrefix) === 'boolean' ? options.useTypesPrefix : true;
+    const useTypesSuffix = typeof (options && options.useTypesSuffix) === 'boolean' ? options.useTypesSuffix : true;
 
     let convertedName = '';
 

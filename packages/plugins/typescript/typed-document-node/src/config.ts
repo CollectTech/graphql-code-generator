@@ -6,21 +6,14 @@ export interface TypeScriptTypedDocumentNodesConfig extends RawClientSideBasePlu
    * @default false
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript', 'typescript-operations'],
-   *        config: {
-   *          flattenGeneratedTypes: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   * path/to/file.ts:
+   *  plugins:
+   *    - typescript
+   *    - typescript-operations
+   *  config:
+   *    flattenGeneratedTypes: true
    * ```
    */
   flattenGeneratedTypes?: boolean;
@@ -30,21 +23,14 @@ export interface TypeScriptTypedDocumentNodesConfig extends RawClientSideBasePlu
    * @default false
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript', 'typescript-operations'],
-   *        config: {
-   *          addTypenameToSelectionSets: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   * path/to/file.ts:
+   *  plugins:
+   *    - typescript-operations
+   *    - typed-document-node
+   *  config:
+   *    addTypenameToSelectionSets: true
    * ```
    */
   addTypenameToSelectionSets?: boolean;

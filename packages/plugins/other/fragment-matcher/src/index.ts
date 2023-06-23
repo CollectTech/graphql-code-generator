@@ -1,6 +1,7 @@
 import { extname } from 'path';
-import { PluginFunction, PluginValidateFn, removeFederation, Types } from '@graphql-codegen/plugin-helpers';
-import { execute, GraphQLSchema, parse } from 'graphql';
+
+import { PluginFunction, PluginValidateFn, Types, removeFederation } from '@graphql-codegen/plugin-helpers';
+import { GraphQLSchema, execute, parse } from 'graphql';
 
 interface IntrospectionResultData {
   __schema: {
@@ -41,22 +42,13 @@ export interface FragmentMatcherConfig {
    * @default es2015
    *
    * @exampleMarkdown
-   * ```tsx {10} filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    schema: 'https://localhost:4000/graphql',
-   *    documents: ['src/**\/*.tsx'],
-   *    generates: {
-   *      'path/to/file.json': {
-   *        plugins: ['fragment-matcher'],
-   *        config: {
-   *          module: 'commonjs',
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {6}
+   * generates:
+   *   path/to/file.json:
+   *     plugins:
+   *       - fragment-matcher
+   *     config:
+   *       module: commonjs
    * ```
    */
   module?: 'commonjs' | 'es2015';
@@ -65,22 +57,13 @@ export interface FragmentMatcherConfig {
    * @default 3
    *
    * @exampleMarkdown
-   * ```tsx {10} filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    schema: 'https://localhost:4000/graphql',
-   *    documents: ['src/**\/*.tsx'],
-   *    generates: {
-   *      'path/to/file.json': {
-   *        plugins: ['fragment-matcher'],
-   *        config: {
-   *          apolloClientVersion: 3,
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {6}
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - fragment-matcher
+   *     config:
+   *       apolloClientVersion: 3
    * ```
    */
   apolloClientVersion?: 2 | 3;
@@ -89,22 +72,13 @@ export interface FragmentMatcherConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```tsx {10} filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    schema: 'https://localhost:4000/graphql',
-   *    documents: ['src/**\/*.tsx'],
-   *    generates: {
-   *      'path/to/file.json': {
-   *        plugins: ['fragment-matcher'],
-   *        config: {
-   *          useExplicitTyping: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {6}
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - fragment-matcher
+   *     config:
+   *       useExplicitTyping: true
    * ```
    */
   useExplicitTyping?: boolean;
@@ -159,7 +133,7 @@ export const plugin: PluginFunction = async (
 
   const filterUnionAndInterfaceTypes = type => type.kind === 'UNION' || type.kind === 'INTERFACE';
   const createPossibleTypesCollection = (acc, type) => {
-    return { ...acc, [type.name]: type.possibleTypes.map(possibleType => possibleType.name) };
+    return { ...acc, ...{ [type.name]: type.possibleTypes.map(possibleType => possibleType.name) } };
   };
 
   const filteredData: IntrospectionResultData | PossibleTypesResultData =

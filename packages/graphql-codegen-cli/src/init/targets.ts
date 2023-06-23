@@ -1,9 +1,13 @@
-import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { readFileSync } from 'fs';
 import { Tags } from './types.js';
 
 export async function guessTargets(): Promise<Record<Tags, boolean>> {
-  const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8'));
+  const pkg = JSON.parse(
+    readFileSync(resolve(process.cwd(), 'package.json'), {
+      encoding: 'utf-8',
+    })
+  );
   const dependencies = Object.keys({
     ...pkg.dependencies,
     ...pkg.devDependencies,
@@ -14,11 +18,10 @@ export async function guessTargets(): Promise<Record<Tags, boolean>> {
     [Tags.react]: isReact(dependencies),
     [Tags.stencil]: isStencil(dependencies),
     [Tags.vue]: isVue(dependencies),
-    [Tags.client]: false,
+    [Tags.browser]: false,
     [Tags.node]: false,
     [Tags.typescript]: isTypescript(dependencies),
     [Tags.flow]: isFlow(dependencies),
-    [Tags.graphqlRequest]: isGraphqlRequest(dependencies),
   };
 }
 
@@ -44,8 +47,4 @@ function isTypescript(dependencies: string[]): boolean {
 
 function isFlow(dependencies: string[]): boolean {
   return dependencies.includes('flow');
-}
-
-function isGraphqlRequest(dependencies: string[]): boolean {
-  return dependencies.includes('graphql-request');
 }

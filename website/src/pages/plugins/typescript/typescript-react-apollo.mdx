@@ -1,23 +1,15 @@
 ---
 title: typescript-react-apollo
-description: GraphQL Code Generator plugin for TypeScript and React Apollo. Generates React Hooks and HOCs for your GraphQL operations.
 ---
 
 import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNote: true })
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<Callout type="info">
+export const getStaticProps = getNpmInfo('typescript-react-apollo')
 
-We now recommend using the `client-preset` package for a **better developer experience** and smaller impact on bundle size.
-
-**Get started on [our "React/Vue" guide](/docs/guides/react-vue).**
-
-</Callout>
-
-<PluginHeader />
-<PluginApiDocs />
+<PackageHeader hasOperationsNote />
+<PackageApiDocs />
 
 ## Usage Example
 
@@ -43,19 +35,15 @@ query Test {
 
 And the following configuration:
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'YOUR_SCHEMA_HERE',
-  documents: './src/**/*.graphql',
-  generates: {
-    './generated-types.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typescript-react-apollo']
-    }
-  }
-}
-export default config
+```yaml
+schema: YOUR_SCHEMA_HERE
+documents: './src/**/*.graphql'
+generates:
+  ./generated-types.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-react-apollo
 ```
 
 Codegen will pre-compile the GraphQL operation into a `DocumentNode` object, and generate a ready-to-use React Hook for each operation you have.
@@ -76,44 +64,18 @@ export const MyComponent: React.FC = () => {
 
 Codegen also supports generating data Components (deprecated in `@apollo/client` v3), you can turn it on this way:
 
-```ts filename="codegen.ts" {10}
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'YOUR_SCHEMA_HERE',
-  documents: './src/**/*.graphql',
-  generates: {
-    './generated-types.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typescript-react-apollo'],
-      config: {
-        withComponent: true
-      }
-    }
-  }
-}
-export default config
+```yaml
+config:
+  withComponent: true
 ```
 
 ### Generate HOC
 
 Codegen also supports generating High-Order-Components (deprecated in `@apollo/client` v3), you can turn it on this way:
 
-```ts filename="codegen.ts" {10}
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'YOUR_SCHEMA_HERE',
-  documents: './src/**/*.graphql',
-  generates: {
-    './generated-types.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typescript-react-apollo'],
-      config: {
-        withHOC: true
-      }
-    }
-  }
-}
-export default config
+```yaml
+config:
+  withHOC: true
 ```
 
 <Callout>
@@ -121,4 +83,10 @@ export default config
   a quick introduction to using this plugin with GraphQL Code Generator:
 </Callout>
 
-<iframe src="https://youtube.com/embed/PYDGjTufGsk" />
+<iframe
+  style={{ width: '100%', height: 400, marginTop: 24 }}
+  src="https://youtube.com/embed/PYDGjTufGsk"
+  title="YouTube video player"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>

@@ -1,20 +1,20 @@
-import { dirname, join, resolve } from 'path';
 import { Types } from '@graphql-codegen/plugin-helpers';
-import { compressToEncodedURIComponent } from 'lz-string';
 import {
-  CompilerOptions,
-  createCompilerHost,
-  createProgram,
-  createSourceFile,
-  Diagnostic,
-  flattenDiagnosticMessageText,
+  ModuleResolutionKind,
+  ScriptTarget,
   JsxEmit,
   ModuleKind,
-  ModuleResolutionKind,
+  createSourceFile,
+  flattenDiagnosticMessageText,
+  createCompilerHost,
+  createProgram,
   ScriptKind,
-  ScriptTarget,
+  CompilerOptions,
+  Diagnostic,
   ScriptTarget as ScriptTargetType,
 } from 'typescript';
+import { resolve, join, dirname } from 'path';
+import { compressToEncodedURIComponent } from 'lz-string';
 
 export function validateTs(
   pluginOutput: Types.PluginOutput,
@@ -97,16 +97,16 @@ export function validateTs(
     const emitResult = program.emit();
     const allDiagnostics = emitResult.diagnostics;
 
-    for (const diagnostic of allDiagnostics) {
+    allDiagnostics.forEach(diagnostic => {
       if (diagnostic.file) {
         const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
         const message = flattenDiagnosticMessageText(diagnostic.messageText, '\n');
         errors.push(`${line + 1},${character + 1}: ${message} ->
     ${contents.split('\n')[line]}`);
       } else {
-        errors.push(String(flattenDiagnosticMessageText(diagnostic.messageText, '\n')));
+        errors.push(`${flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`);
       }
-    }
+    });
   } else {
     const result = createSourceFile(
       testFile,
@@ -119,16 +119,16 @@ export function validateTs(
     const allDiagnostics = result.parseDiagnostics;
 
     if (allDiagnostics && allDiagnostics.length > 0) {
-      for (const diagnostic of allDiagnostics) {
+      allDiagnostics.forEach(diagnostic => {
         if (diagnostic.file) {
           const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
           const message = flattenDiagnosticMessageText(diagnostic.messageText, '\n');
           errors.push(`${line + 1},${character + 1}: ${message} ->
   ${contents.split('\n')[line]}`);
         } else {
-          errors.push(String(flattenDiagnosticMessageText(diagnostic.messageText, '\n')));
+          errors.push(`${flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`);
         }
-      }
+      });
     }
   }
 
@@ -216,16 +216,16 @@ export function compileTs(
     const allDiagnostics = emitResult.diagnostics;
     const errors: string[] = [];
 
-    for (const diagnostic of allDiagnostics) {
+    allDiagnostics.forEach(diagnostic => {
       if (diagnostic.file) {
         const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
         const message = flattenDiagnosticMessageText(diagnostic.messageText, '\n');
         errors.push(`${line + 1},${character + 1}: ${message} ->
   ${contents.split('\n')[line]}`);
       } else {
-        errors.push(String(flattenDiagnosticMessageText(diagnostic.messageText, '\n')));
+        errors.push(`${flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`);
       }
-    }
+    });
 
     const relevantErrors = errors.filter(e => !e.includes('Cannot find module'));
 

@@ -5,19 +5,8 @@
   "access": "restricted",
   "baseBranch": "master",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "website",
-    "example-*",
-    "@graphql-codegen/client-preset-swc-plugin",
-    "example-apollo-client-swc-plugin",
-    "example-react-nextjs-swr"
-  ],
-  "changelog": [
-    "@changesets/changelog-github",
-    {
-      "repo": "dotansimha/graphql-code-generator"
-    }
-  ],
+  "ignore": ["@graphql-codegen/testing", "website", "example-*"],
+  "changelog": ["@changesets/changelog-github", { "repo": "dotansimha/graphql-code-generator" }],
   "snapshot": {
     "useCalculatedVersion": true,
     "prereleaseTemplate": "{tag}-{datetime}-{commit}"

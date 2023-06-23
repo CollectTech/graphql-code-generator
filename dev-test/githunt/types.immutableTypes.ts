@@ -3,59 +3,57 @@ export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
-export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string };
-  String: { input: string; output: string };
-  Boolean: { input: boolean; output: boolean };
-  Int: { input: number; output: number };
-  Float: { input: number; output: number };
+  ID: string;
+  String: string;
+  Boolean: boolean;
+  Int: number;
+  Float: number;
 };
 
 /** A comment about an entry, submitted by a user */
 export type Comment = {
   readonly __typename?: 'Comment';
   /** The text of the comment */
-  readonly content: Scalars['String']['output'];
+  readonly content: Scalars['String'];
   /** A timestamp of when the comment was posted */
-  readonly createdAt: Scalars['Float']['output'];
+  readonly createdAt: Scalars['Float'];
   /** The SQL ID of this entry */
-  readonly id: Scalars['Int']['output'];
+  readonly id: Scalars['Int'];
   /** The GitHub user who posted the comment */
   readonly postedBy: User;
   /** The repository which this comment is about */
-  readonly repoName: Scalars['String']['output'];
+  readonly repoName: Scalars['String'];
 };
 
 /** Information about a GitHub repository submitted to GitHunt */
 export type Entry = {
   readonly __typename?: 'Entry';
   /** The number of comments posted about this repository */
-  readonly commentCount: Scalars['Int']['output'];
+  readonly commentCount: Scalars['Int'];
   /** Comments posted about this repository */
   readonly comments: ReadonlyArray<Maybe<Comment>>;
   /** A timestamp of when the entry was submitted */
-  readonly createdAt: Scalars['Float']['output'];
+  readonly createdAt: Scalars['Float'];
   /** The hot score of this repository */
-  readonly hotScore: Scalars['Float']['output'];
+  readonly hotScore: Scalars['Float'];
   /** The SQL ID of this entry */
-  readonly id: Scalars['Int']['output'];
+  readonly id: Scalars['Int'];
   /** The GitHub user who submitted this entry */
   readonly postedBy: User;
   /** Information about the repository from GitHub */
   readonly repository: Repository;
   /** The score of this repository, upvotes - downvotes */
-  readonly score: Scalars['Int']['output'];
+  readonly score: Scalars['Int'];
   /** XXX to be changed */
   readonly vote: Vote;
 };
 
 /** Information about a GitHub repository submitted to GitHunt */
 export type EntryCommentsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
 };
 
 /** A list of options for the sort order of the feed */
@@ -79,16 +77,16 @@ export type Mutation = {
 };
 
 export type MutationSubmitCommentArgs = {
-  commentContent: Scalars['String']['input'];
-  repoFullName: Scalars['String']['input'];
+  commentContent: Scalars['String'];
+  repoFullName: Scalars['String'];
 };
 
 export type MutationSubmitRepositoryArgs = {
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 };
 
 export type MutationVoteArgs = {
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
   type: VoteType;
 };
 
@@ -103,12 +101,12 @@ export type Query = {
 };
 
 export type QueryEntryArgs = {
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 };
 
 export type QueryFeedArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
   type: FeedType;
 };
 
@@ -119,19 +117,19 @@ export type QueryFeedArgs = {
 export type Repository = {
   readonly __typename?: 'Repository';
   /** The description of the repository */
-  readonly description?: Maybe<Scalars['String']['output']>;
+  readonly description?: Maybe<Scalars['String']>;
   /** The full name of the repository with the username, e.g. apollostack/GitHunt-API */
-  readonly full_name: Scalars['String']['output'];
+  readonly full_name: Scalars['String'];
   /** The link to the repository on GitHub */
-  readonly html_url: Scalars['String']['output'];
+  readonly html_url: Scalars['String'];
   /** Just the name of the repository, e.g. GitHunt-API */
-  readonly name: Scalars['String']['output'];
+  readonly name: Scalars['String'];
   /** The number of open issues on this repository on GitHub */
-  readonly open_issues_count?: Maybe<Scalars['Int']['output']>;
+  readonly open_issues_count?: Maybe<Scalars['Int']>;
   /** The owner of this repository on GitHub, e.g. apollostack */
   readonly owner?: Maybe<User>;
   /** The number of people who have starred this repository on GitHub */
-  readonly stargazers_count: Scalars['Int']['output'];
+  readonly stargazers_count: Scalars['Int'];
 };
 
 export type Subscription = {
@@ -141,24 +139,24 @@ export type Subscription = {
 };
 
 export type SubscriptionCommentAddedArgs = {
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 };
 
 /** A user object from the GitHub API. This uses the exact field names returned from the GitHub API. */
 export type User = {
   readonly __typename?: 'User';
   /** The URL to a directly embeddable image for this user's avatar */
-  readonly avatar_url: Scalars['String']['output'];
+  readonly avatar_url: Scalars['String'];
   /** The URL of this user's GitHub page */
-  readonly html_url: Scalars['String']['output'];
+  readonly html_url: Scalars['String'];
   /** The name of the user, e.g. apollostack */
-  readonly login: Scalars['String']['output'];
+  readonly login: Scalars['String'];
 };
 
 /** XXX to be removed */
 export type Vote = {
   readonly __typename?: 'Vote';
-  readonly vote_value: Scalars['Int']['output'];
+  readonly vote_value: Scalars['Int'];
 };
 
 /** The type of vote to record, when submitting a vote */
@@ -169,7 +167,7 @@ export enum VoteType {
 }
 
 export type OnCommentAddedSubscriptionVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 }>;
 
 export type OnCommentAddedSubscription = {
@@ -184,9 +182,9 @@ export type OnCommentAddedSubscription = {
 };
 
 export type CommentQueryVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  repoFullName: Scalars['String'];
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
 }>;
 
 export type CommentQuery = {
@@ -252,8 +250,8 @@ export type FeedEntryFragment = {
 
 export type FeedQueryVariables = Exact<{
   type: FeedType;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  limit?: InputMaybe<Scalars['Int']>;
 }>;
 
 export type FeedQuery = {
@@ -280,7 +278,7 @@ export type FeedQuery = {
 };
 
 export type SubmitRepositoryMutationVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
 }>;
 
 export type SubmitRepositoryMutation = {
@@ -301,8 +299,8 @@ export type RepoInfoFragment = {
 };
 
 export type SubmitCommentMutationVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
-  commentContent: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
+  commentContent: Scalars['String'];
 }>;
 
 export type SubmitCommentMutation = {
@@ -323,7 +321,7 @@ export type VoteButtonsFragment = {
 };
 
 export type VoteMutationVariables = Exact<{
-  repoFullName: Scalars['String']['input'];
+  repoFullName: Scalars['String'];
   type: VoteType;
 }>;
 

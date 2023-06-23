@@ -1,6 +1,7 @@
-import { GraphQLEnumType, GraphQLSchema, isEnumType } from 'graphql';
-import { parseMapper } from './mappers.js';
 import { EnumValuesMap, ParsedEnumValuesMap } from './types.js';
+import { GraphQLSchema, isEnumType, GraphQLEnumType } from 'graphql';
+import { DetailedError } from '@graphql-codegen/plugin-helpers';
+import { parseMapper } from './mappers.js';
 
 function escapeString(str: string) {
   return str.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/'/g, "\\'");
@@ -24,7 +25,7 @@ export function parseEnumValues({
         const enumType = schema.getType(enumTypeName) as GraphQLEnumType;
         for (const { name, value } of enumType.getValues()) {
           if (value !== name) {
-            mapOrStr[enumTypeName] ||= {};
+            mapOrStr[enumTypeName] = mapOrStr[enumTypeName] || {};
             if (typeof mapOrStr[enumTypeName] !== 'string' && !mapOrStr[enumTypeName][name]) {
               mapOrStr[enumTypeName][name] = typeof value === 'string' ? escapeString(value) : value;
             }
@@ -36,9 +37,9 @@ export function parseEnumValues({
     const invalidMappings = Object.keys(mapOrStr).filter(gqlName => !allEnums.includes(gqlName));
 
     if (invalidMappings.length > 0) {
-      throw new Error(
-        `Invalid 'enumValues' mapping! \n
-        The following types does not exist in your GraphQL schema: ${invalidMappings.join(', ')}`
+      throw new DetailedError(
+        `Invalid 'enumValues' mapping!`,
+        `The following types does not exist in your GraphQL schema: ${invalidMappings.join(', ')}`
       );
     }
 
@@ -73,9 +74,9 @@ export function parseEnumValues({
           },
         };
       }
-      throw new Error(
-        `Invalid "enumValues" configuration \n
-        Enum "${gqlIdentifier}": expected string or object (with enum values mapping)`
+      throw new DetailedError(
+        `Invalid "enumValues" configuration`,
+        `Enum "${gqlIdentifier}": expected string or object (with enum values mapping)`
       );
     }, {} as ParsedEnumValuesMap);
   }

@@ -1,3 +1,3 @@
-module.exports = function (schemaString, _config) {
+module.exports = function (schemaString, config) {
   return schemaString;
 };

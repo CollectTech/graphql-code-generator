@@ -1,15 +1,15 @@
 ---
 title: typescript-rtk-query
-description: RTK Query codegen plugin for GraphQL. Generates React Hooks for GraphQL queries and mutations. Works with any GraphQL client.
 ---
 
 import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNote: true })
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
-<PluginApiDocs />
+export const getStaticProps = getNpmInfo('typescript-rtk-query')
+
+<PackageHeader hasOperationsNote />
+<PackageApiDocs />
 
 ## Usage Examples
 
@@ -20,28 +20,17 @@ export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNo
 
 ### Using `graphql-request`
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'MY_SCHEMA_PATH',
-  documents: './src/**/*.graphql',
-  generates: {
-    './src/app/api/generated.ts': {
-      plugins: [
-        'typescript',
-        'typescript-operations',
-        {
-          'typescript-rtk-query': {
-            importBaseApiFrom: 'src/app/api/baseApi',
-            exportHooks: true
-          }
-        }
-      ]
-    }
-  }
-}
-export default config
+```yaml
+schema: MY_SCHEMA_PATH
+documents: './src/**/*.graphql'
+generates:
+  ./src/app/api/generated.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-rtk-query:
+          importBaseApiFrom: 'src/app/api/baseApi'
+          exportHooks: true
 ```
 
 The generated `src/app/api/generated.ts` would try to `import { api } from 'src/app/api/baseApi'{:ts}`, so you have to create that file:

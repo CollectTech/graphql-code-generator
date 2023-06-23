@@ -1,10 +1,9 @@
-import { dirname, join } from 'path';
-import { Types } from '@graphql-codegen/plugin-helpers';
 import { useMonorepo } from '@graphql-codegen/testing';
-import makeDir from 'make-dir';
 import { generate } from '../src/generate-and-save.js';
-import { createContext } from '../src/config.js';
 import * as fs from '../src/utils/file-system.js';
+import { Types } from '@graphql-codegen/plugin-helpers';
+import { dirname, join } from 'path';
+import makeDir from 'make-dir';
 
 const SIMPLE_TEST_SCHEMA = `type MyType { f: String } type Query { f: String }`;
 
@@ -50,8 +49,8 @@ describe('generate-and-save', () => {
     const filename = 'overwrite.ts';
     const writeSpy = jest.spyOn(fs, 'writeFile').mockImplementation();
     // forces file to exist
-    const fileReadSpy = jest.spyOn(fs, 'readFile');
-    fileReadSpy.mockImplementation(async () => '');
+    const fileExistsSpy = jest.spyOn(fs, 'fileExists');
+    fileExistsSpy.mockImplementation(async file => file === filename);
 
     const output = await generate(
       {
@@ -72,25 +71,9 @@ describe('generate-and-save', () => {
 
     expect(output.length).toBe(1);
     // makes sure it checks if file is there
-    expect(fileReadSpy).toHaveBeenCalledWith(filename);
+    expect(fileExistsSpy).toHaveBeenCalledWith(filename);
     // makes sure it doesn't write a new file
     expect(writeSpy).not.toHaveBeenCalled();
-  });
-
-  test('should not error when ignoreNoDocuments config option is present', async () => {
-    jest.spyOn(fs, 'writeFile').mockImplementation();
-    const config = await createContext({
-      config: './tests/test-files/graphql.config.json',
-      project: undefined,
-      errorsOnly: true,
-      overwrite: true,
-      profile: true,
-      require: [],
-      silent: false,
-      watch: false,
-    });
-
-    await generate(config, false);
   });
 
   test('should use global overwrite option and write a file', async () => {
@@ -122,8 +105,8 @@ describe('generate-and-save', () => {
     const filename = 'overwrite.ts';
     const writeSpy = jest.spyOn(fs, 'writeFile').mockImplementation();
     // forces file to exist
-    const fileReadSpy = jest.spyOn(fs, 'readFile');
-    fileReadSpy.mockImplementation(async () => '');
+    const fileExistsSpy = jest.spyOn(fs, 'fileExists');
+    fileExistsSpy.mockImplementation(async file => file === filename);
 
     const output = await generate(
       {
@@ -143,7 +126,7 @@ describe('generate-and-save', () => {
 
     expect(output.length).toBe(1);
     // makes sure it checks if file is there
-    expect(fileReadSpy).toHaveBeenCalledWith(filename);
+    expect(fileExistsSpy).toHaveBeenCalledWith(filename);
     // makes sure it doesn't write a new file
     expect(writeSpy).not.toHaveBeenCalled();
   });
@@ -153,6 +136,9 @@ describe('generate-and-save', () => {
     const writeSpy = jest.spyOn(fs, 'writeFile').mockImplementation();
     const readSpy = jest.spyOn(fs, 'readFile').mockImplementation();
     readSpy.mockImplementation(async _f => '');
+    // forces file to exist
+    const fileExistsSpy = jest.spyOn(fs, 'fileExists');
+    fileExistsSpy.mockImplementation(async file => file === filename);
 
     const output = await generate(
       {
@@ -190,7 +176,7 @@ describe('generate-and-save', () => {
     import gql from 'graphql-tag';
     const MyQuery = gql\`query MyQuery { f }\`;
   `,
-      'utf8'
+      {}
     );
     const generateOnce: () => Promise<Types.FileOutput[]> = () =>
       generate(
@@ -227,30 +213,6 @@ describe('generate-and-save', () => {
 
     expect(output.length).toBe(1);
     expect(output[0].content).toMatch('Used apollo-server');
-    // makes sure it doesn't write a new file
-    expect(writeSpy).toHaveBeenCalled();
-  });
-  test('should allow to alter the content with the beforeOneFileWrite hook', async () => {
-    const filename = 'modify.ts';
-    const writeSpy = jest.spyOn(fs, 'writeFile').mockImplementation();
-
-    const output = await generate(
-      {
-        schema: SIMPLE_TEST_SCHEMA,
-        generates: {
-          [filename]: {
-            plugins: ['typescript'],
-            hooks: {
-              beforeOneFileWrite: [() => 'new content'],
-            },
-          },
-        },
-      },
-      true
-    );
-
-    expect(output.length).toBe(1);
-    expect(output[0].content).toMatch('new content');
     // makes sure it doesn't write a new file
     expect(writeSpy).toHaveBeenCalled();
   });

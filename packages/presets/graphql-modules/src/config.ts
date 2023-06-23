@@ -6,22 +6,14 @@ export type ModulesConfig = {
    * The key of the output is used a base path for this file.
    *
    * @example
-   * ```ts filename="codegen.ts" {10}
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        preset: 'modules',
-   *        plugins: ['typescript-resolvers'],
-   *        presetConfig: {
-   *          baseTypesPath: 'types.ts'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   * src/:
+   *  preset: modules
+   *  presetConfig:
+   *    baseTypesPath: types.ts
+   *  plugins:
+   *    - typescript-resolvers
    * ```
    */
   baseTypesPath: string;
@@ -40,23 +32,15 @@ export type ModulesConfig = {
    * @default process.cwd()
    *
    * @example
-   * ```ts filename="codegen.ts" {10}
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        preset: 'modules',
-   *        plugins: ['typescript-resolvers'],
-   *        presetConfig: {
-   *          baseTypesPath: 'types.ts',
-   *          cwd: '/some/path'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   * src/:
+   *  preset: modules
+   *  presetConfig:
+   *    baseTypesPath: types.ts
+   *    cwd: /some/path
+   *  plugins:
+   *    - typescript-resolvers
    * ```
    */
   cwd?: string;
@@ -67,23 +51,15 @@ export type ModulesConfig = {
    * @default Types
    *
    * @example
-   * ```ts filename="codegen.ts" {10}
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        preset: 'modules',
-   *        plugins: ['typescript-resolvers'],
-   *        presetConfig: {
-   *          baseTypesPath: 'types.ts',
-   *          importTypesNamespace: 'core'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   * src/:
+   *  preset: modules
+   *  presetConfig:
+   *    baseTypesPath: types.ts
+   *    importTypesNamespace: core
+   *  plugins:
+   *    - typescript-resolvers
    * ```
    */
   importTypesNamespace?: string;
@@ -113,7 +89,7 @@ export type ModulesConfig = {
    * @description Generate resolvers of root types (Query, Mutation and Subscription) as non-optional.
    *
    * @example
-   * ```yaml
+   * ```yml
    * generates:
    * src/:
    *  preset: modules

@@ -1,13 +1,13 @@
 ---
 title: reason-client
-description: GraphQL Code Generator plugin for ReasonML types. A plugin for GraphQL Codegen to generate ReasonML types based on your GraphQL schema for use in a client application.
 ---
 
-import { PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('reason-client')
+
+<PackageHeader />
 
 _Built and maintained by [kgoggin](https://github.com/kgoggin)_.
 

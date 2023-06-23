@@ -1,14 +1,14 @@
 ---
 title: typescript-document-nodes
-description: Generate TypeScript code for GraphQL documents. Useful for GraphQL codegen.
 ---
 
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
-<PluginApiDocs />
+export const getStaticProps = getNpmInfo('typescript-document-nodes')
+
+<PackageHeader />
+<PackageApiDocs />
 
 ## Usage
 

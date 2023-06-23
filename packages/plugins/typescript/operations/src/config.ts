@@ -1,4 +1,4 @@
-import { AvoidOptionalsConfig, RawDocumentsConfig } from '@graphql-codegen/visitor-plugin-common';
+import { RawDocumentsConfig, AvoidOptionalsConfig } from '@graphql-codegen/visitor-plugin-common';
 
 /**
  * @description This plugin generates TypeScript types based on your GraphQLSchema _and_ your GraphQL operations and fragments.
@@ -16,21 +16,13 @@ export interface TypeScriptDocumentsPluginConfig extends RawDocumentsConfig {
    * @default true
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript'],
-   *        config: {
-   *          arrayInputCoercion: false
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *     config:
+   *       arrayInputCoercion: false
    * ```
    */
   arrayInputCoercion?: boolean;
@@ -43,45 +35,29 @@ export interface TypeScriptDocumentsPluginConfig extends RawDocumentsConfig {
    * @exampleMarkdown
    * ## Override all definition types
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript'],
-   *        config: {
-   *          avoidOptionals: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *       - typescript-operations
+   *     config:
+   *       avoidOptionals: true
    * ```
    *
    * ## Override only specific definition types
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript'],
-   *        config: {
-   *          avoidOptionals: {
-   *            field: true
-   *            inputValue: true
-   *            object: true
-   *            defaultValue: true
-   *          }
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *     config:
+   *       avoidOptionals:
+   *         field: true
+   *         inputValue: true
+   *         object: true
+   *         defaultValue: true
    * ```
    */
   avoidOptionals?: boolean | AvoidOptionalsConfig;
@@ -90,21 +66,14 @@ export interface TypeScriptDocumentsPluginConfig extends RawDocumentsConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript'],
-   *        config: {
-   *          immutableTypes: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *       - typescript-operations
+   *     config:
+   *       immutableTypes: true
    * ```
    */
   immutableTypes?: boolean;
@@ -113,21 +82,14 @@ export interface TypeScriptDocumentsPluginConfig extends RawDocumentsConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript', 'typescript-operations'],
-   *        config: {
-   *          flattenGeneratedTypes: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *       - typescript-operations
+   *     config:
+   *       flattenGeneratedTypes: true
    * ```
    */
   flattenGeneratedTypes?: boolean;
@@ -137,22 +99,15 @@ export interface TypeScriptDocumentsPluginConfig extends RawDocumentsConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript', 'typescript-operations'],
-   *        config: {
-   *          flattenGeneratedTypes: true,
-   *          flattenGeneratedTypesIncludeFragments: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *       - typescript-operations
+   *     config:
+   *       flattenGeneratedTypes: true
+   *       flattenGeneratedTypesIncludeFragments: true
    * ```
    */
   flattenGeneratedTypesIncludeFragments?: boolean;
@@ -163,21 +118,13 @@ export interface TypeScriptDocumentsPluginConfig extends RawDocumentsConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript'],
-   *        config: {
-   *          noExport: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *   path/to/file.ts:
+   *     plugins:
+   *       - typescript
+   *     config:
+   *       noExport: true
    * ```
    */
   noExport?: boolean;
@@ -195,33 +142,21 @@ export interface TypeScriptDocumentsPluginConfig extends RawDocumentsConfig {
    * @default false
    * @see https://github.com/dotansimha/graphql-code-generator/issues/3949
    *
-   * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      "./typings/api.ts": {
-   *        "plugins": [
-   *            "typescript"
-   *        ]
-   *    },
-   *    "./": {
-   *        "preset": "near-operation-file",
-   *        "presetConfig": {
-   *            "baseTypesPath": "./typings/api.ts",
-   *            "extension": ".gql.d.ts"
-   *        },
-   *        "plugins": [
-   *            "@graphql-codegen/typescript-operations"
-   *        ],
-   *        "config": {
-   *            "addOperationExport": true
-   *        }
-   *    }
-   *  };
-   *  export default config;
+   * @example
+   * ```yaml
+   * generates:
+   * ./typings/api.ts:
+   *   plugins:
+   *     - '@graphql-codegen/typescript'
+   * ./:
+   *   preset: near-operation-file
+   *   presetConfig:
+   *     baseTypesPath: ./typings/api.ts
+   *     extension: .gql.d.ts
+   *   plugins:
+   *     - '@graphql-codegen/typescript-operations'
+   *   config:
+   *     addOperationExport: true
    * ```
    */
   addOperationExport?: boolean;
@@ -231,39 +166,24 @@ export interface TypeScriptDocumentsPluginConfig extends RawDocumentsConfig {
    *
    * @exampleMarkdown
    * ## Allow undefined
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript'],
-   *        config: {
-   *          maybeValue: 'T | null | undefined'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *  path/to/file.ts:
+   *    plugins:
+   *      - typescript
+   *    config:
+   *      maybeValue: T | null | undefined
    * ```
    *
    * ## Allow `null` in resolvers:
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file.ts': {
-   *        plugins: ['typescript'],
-   *        config: {
-   *          maybeValue: 'T extends PromiseLike<infer U> ? Promise<U | null> : T | null'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * generates:
+   *  path/to/file.ts:
+   *    plugins:
+   *      - typescript
+   *      - typescript-resolvers
+   *    config:
+   *      maybeValue: 'T extends PromiseLike<infer U> ? Promise<U | null> : T | null'
    * ```
    */
   maybeValue?: string;

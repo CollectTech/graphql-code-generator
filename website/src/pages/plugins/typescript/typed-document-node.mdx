@@ -1,19 +1,14 @@
 ---
 title: typed-document-node
-description: Generate TypedDocumentNode for GraphQL operations. This plugin is a wrapper for graphql-typed-document-node.
 ---
 
 import { Callout } from '@theguild/components'
-import { PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNote: true })
+import { PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<Callout>
-For new projects, we recommend using the [`client-preset`](/plugins/presets/preset-client), which uses `typed-document-node` under the hood.
+export const getStaticProps = getNpmInfo('typed-document-node')
 
-</Callout>
-
-<PluginHeader />
+<PackageHeader hasOperationsNote />
 
 These plugins generate a ready-to-use `TypedDocumentNode` (a combination of pre-compiled `DocumentNode` and the TypeScript signature it represents).
 
@@ -26,23 +21,25 @@ This plugin also generates less boilerplate code for your GraphQL operations.
   using this plugin with GraphQL Code Generator:
 </Callout>
 
-<iframe src="https://youtube.com/embed/cYIhx8dusa4" title="Typed Document Node with GraphQL Code Generator" />
+<iframe
+  style={{ width: '100%', height: 400, marginTop: 24 }}
+  src="https://youtube.com/embed/cYIhx8dusa4"
+  title="Typed Document Node with GraphQL Code Generator"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>
 
 ### Usage example
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'SCHEMA_FILE_OR_ENDPOINT_HERE',
-  documents: './src/**/*.graphql',
-  generates: {
-    './src/graphql-operations.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typed-document-node']
-    }
-  }
-}
-export default config
+```yaml
+schema: SCHEMA_FILE_OR_ENDPOINT_HERE
+documents: './src/**/*.graphql'
+generates:
+  ./src/graphql-operations.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typed-document-node
 ```
 
 The example about will generate `TypedDocumentNode` with the needed types built-in, for example:

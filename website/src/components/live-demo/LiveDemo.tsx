@@ -1,23 +1,29 @@
-import { ReactElement, useEffect, useState } from 'react';
-import { Image, useTheme } from '@theguild/components';
+import { useState, useEffect, Suspense, ReactElement } from 'react';
+import { load } from 'js-yaml';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { useTheme } from '@theguild/components';
 import Select from 'react-select';
-import { icons } from '@/lib/plugins';
-import { EXAMPLES } from './examples';
+import { EXAMPLES, EXAMPLES_ICONS } from './examples';
+import { getMode } from './formatter';
 import { generate } from './generate';
-import { LiveDemoEditors } from './LiveDemoEditors';
+import { Loading } from '../ui/Loading';
+import LiveDemoEditors from './LiveDemoEditors';
+
+const ErrorBoundary = dynamic(import('./ErrorBoundary'), { ssr: false });
 
 const groupedExamples = Object.entries(EXAMPLES).map(([catName, category]) => ({
   label: catName,
   options: category.map((t, index) => ({ ...t, selectId: `${catName}__${index}` })),
 }));
 
-function useCodegen(config: string | undefined, schema: string | undefined, documents: string | undefined, templateName: string, operationsFileName?: string) {
-  const [error, setError] = useState<string | null>(null);
-  const [output, setOutput] = useState<{filename: string, content: string}[] | null>(null);
+function useCodegen(config: string, schema: string, documents?: string, templateName: string) {
+  const [error, setError] = useState(null);
+  const [output, setOutput] = useState(null);
 
   useEffect(() => {
-    if (!config || !schema) return;
-    generate(config, schema, documents, operationsFileName).then(result => {
+    async function run() {
+      const result = await generate(config, schema, documents);
       if (typeof result === 'string') {
         setOutput(null);
         setError(result);
@@ -25,10 +31,15 @@ function useCodegen(config: string | undefined, schema: string | undefined, docu
         setOutput(result);
         setError(null);
       }
-    });
+    }
+
+    run();
   }, [config, schema, documents, templateName]);
 
-  return { error, output };
+  return {
+    error,
+    output,
+  };
 }
 
 const DEFAULT_EXAMPLE = {
@@ -36,25 +47,38 @@ const DEFAULT_EXAMPLE = {
   index: 0,
 } as const;
 
-export default function LiveDemo(): ReactElement {
-  const { resolvedTheme } = useTheme();
-  const isDarkTheme = resolvedTheme === 'dark';
+export const LiveDemo = (): ReactElement => {
+  const { theme } = useTheme();
+  const isDarkTheme = theme === 'dark';
   const [template, setTemplate] = useState(`${DEFAULT_EXAMPLE.catName}__${DEFAULT_EXAMPLE.index}`);
-  const [schema, setSchema] = useState<string | undefined>(EXAMPLES[DEFAULT_EXAMPLE.catName][DEFAULT_EXAMPLE.index].schema);
-  const [documents, setDocuments] = useState<string | undefined>(EXAMPLES[DEFAULT_EXAMPLE.catName][DEFAULT_EXAMPLE.index].documents);
-  const [operationsFile, setOperationsFile] = useState<{filename: string, content: string, language: string} | undefined>(EXAMPLES[DEFAULT_EXAMPLE.catName][DEFAULT_EXAMPLE.index].operationsFile);
-  const [config, setConfig] = useState<string | undefined>(EXAMPLES[DEFAULT_EXAMPLE.catName][DEFAULT_EXAMPLE.index].config);
-  const { output, error } = useCodegen(config, schema, documents, template, operationsFile?.filename);
+  const [schema, setSchema] = useState(EXAMPLES[DEFAULT_EXAMPLE.catName][DEFAULT_EXAMPLE.index].schema);
+  const [documents, setDocuments] = useState(EXAMPLES[DEFAULT_EXAMPLE.catName][DEFAULT_EXAMPLE.index].documents);
+  const [config, setConfig] = useState(EXAMPLES[DEFAULT_EXAMPLE.catName][DEFAULT_EXAMPLE.index].config);
+  const { output, error } = useCodegen(config, schema, documents, template);
 
-  const changeTemplate = (value: string | undefined) => {
-    if (!value) return;
+  const changeTemplate = value => {
     const [catName, index] = value.split('__');
-    setSchema(EXAMPLES[catName][Number(index)].schema);
-    setDocuments(EXAMPLES[catName][Number(index)].documents);
-    setOperationsFile(EXAMPLES[catName][Number(index)].operationsFile);
-    setConfig(EXAMPLES[catName][Number(index)].config);
+    setSchema(EXAMPLES[catName][index].schema);
+    setDocuments(EXAMPLES[catName][index].documents);
+    setConfig(EXAMPLES[catName][index].config);
     setTemplate(value);
   };
+
+  let mode = null;
+
+  try {
+    const parsedConfig = load(config || '');
+    mode = getMode(parsedConfig);
+  } catch (e) {
+    console.error(e);
+  }
+
+  // let description = null;
+  //
+  // if (template) {
+  //   const [catName, index] = template.split('__');
+  //   description = EXAMPLES[catName][index].description;
+  // }
 
   return (
     <div className="hidden lg:!block">
@@ -64,8 +88,8 @@ export default function LiveDemo(): ReactElement {
           isSearchable={false}
           className="
             rounded-md
-            [&>div>div>div]:dark:text-gray-200
             [&>div]:dark:bg-black
+            [&>div>div>div]:dark:text-gray-200
           "
           styles={{
             option: (styles, { isFocused }) => ({
@@ -76,39 +100,47 @@ export default function LiveDemo(): ReactElement {
           }}
           isMulti={false}
           isClearable={false}
-          onChange={e => changeTemplate(e?.selectId)}
+          onChange={e => changeTemplate(e.selectId)}
           getOptionValue={o => o.selectId}
           getOptionLabel={o => (
             <div className="flex items-center justify-end gap-1.5">
               <span className="mr-auto">{o.name}</span>
-              {o.tags?.map(t => {
-                const icon = icons[t as keyof typeof icons];
+              {o.tags?.map((t, index) => {
+                const icon = EXAMPLES_ICONS[t];
+                const key = `${o.name}_${index}`;
                 return icon ? (
-                  <Image alt='Icon' key={t} src={icon} placeholder="empty" loading="eager" className="max-h-[20px] w-auto" />
+                  <Image key={key} priority height={18} width={18} alt={icon.alt} src={icon.src} />
                 ) : (
-                  <span key={t} className="rounded-lg bg-gray-200 px-2 text-xs text-gray-800">
+                  <span key={key} className="rounded-lg bg-gray-200 px-2 px-1 text-xs text-gray-800">
                     {t}
                   </span>
                 );
               })}
             </div>
-            // fix react-select types
-          ) as any as string}
+          )}
           defaultValue={groupedExamples[0].options[0]}
           options={groupedExamples}
         />
       </div>
-      <LiveDemoEditors
-        setSchema={setSchema}
-        schema={schema}
-        setDocuments={setDocuments}
-        documents={documents}
-        operationsFile={operationsFile}
-        setConfig={setConfig}
-        config={config}
-        error={error}
-        output={output}
-      />
+      <div className="flex border-y border-gray-300">
+        <ErrorBoundary>
+          <Suspense fallback={<Loading color={isDarkTheme ? '#fff' : '#000'} height="450px" />}>
+            <LiveDemoEditors
+              setSchema={setSchema}
+              schema={schema}
+              setDocuments={setDocuments}
+              documents={documents}
+              setConfig={setConfig}
+              config={config}
+              mode={mode}
+              error={error}
+              output={output}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </div>
     </div>
   );
-}
+};
+
+export default LiveDemo;

@@ -1,6 +1,5 @@
-import type { ApolloEngineOptions } from '@graphql-tools/apollo-engine-loader';
+import { GraphQLSchema, DocumentNode } from 'graphql';
 import { Source } from '@graphql-tools/utils';
-import { DocumentNode, GraphQLSchema } from 'graphql';
 import type { Profiler } from './profiler.js';
 
 export namespace Types {
@@ -19,7 +18,6 @@ export namespace Types {
     pluginContext?: { [key: string]: any };
     profiler?: Profiler;
     cache?<T>(namespace: string, key: string, factory: () => Promise<T>): Promise<T>;
-    documentTransforms?: ConfiguredDocumentTransform[];
   }
 
   export type FileOutput = {
@@ -92,10 +90,6 @@ export namespace Types {
      * @description HTTP Method to use, either POST (default) or GET.
      */
     method?: string;
-    /**
-     * @description Handling the response as SDL will allow you to load schema from remote server that doesn't return a JSON introspection.
-     */
-    handleAsSDL?: boolean;
   }
   export interface UrlSchemaWithOptions {
     [url: string]: UrlSchemaOptions;
@@ -183,14 +177,6 @@ export namespace Types {
     [globPath: string]: LocalSchemaPathOptions;
   }
 
-  export interface ApolloEngineSchemaOptions {
-    'apollo-engine': ApolloEngineOptions;
-  }
-
-  export interface GitHubSchemaOptions {
-    [githubProtocol: string]: { token: string };
-  }
-
   export type SchemaGlobPath = string;
   /**
    * @description A URL to your GraphQL endpoint, a local path to `.graphql` file, a glob pattern to your GraphQL schema files, or a JavaScript file that exports the schema to generate code from. This can also be an array which specifies multiple schemas to generate code from. You can read more about the supported formats [here](schema-field#available-formats).
@@ -198,8 +184,6 @@ export namespace Types {
   export type Schema =
     | string
     | UrlSchemaWithOptions
-    | ApolloEngineSchemaOptions
-    | GitHubSchemaOptions
     | LocalSchemaPathWithOptions
     | SchemaGlobPath
     | SchemaWithLoader
@@ -234,14 +218,6 @@ export namespace Types {
   export type NamedPreset = string;
   export type OutputConfig = NamedPlugin | ConfiguredPlugin;
 
-  export type PresetNamesBase =
-    | 'client'
-    | 'near-operation-file'
-    | 'gql-tag-operations'
-    | 'graphql-modules'
-    | 'import-types';
-  export type PresetNames = `${PresetNamesBase}-preset` | PresetNamesBase;
-
   /**
    * @additionalProperties false
    */
@@ -253,20 +229,20 @@ export namespace Types {
      *
      * You can either specify plugins from the community using the NPM package name (after you installed it in your project), or you can use a path to a local file for custom plugins.
      *
-     * You can find a list of available plugins here: https://the-guild.dev/graphql/codegen/docs/plugins/index
-     * Need a custom plugin? read this: https://the-guild.dev/graphql/codegen/docs/custom-codegen/index
+     * You can find a list of available plugins here: https://graphql-code-generator.com/docs/plugins/index
+     * Need a custom plugin? read this: https://graphql-code-generator.com/docs/custom-codegen/index
      */
-    plugins?: OutputConfig[];
+    plugins: OutputConfig[];
     /**
      * @description If your setup uses Preset to have a more dynamic setup and output, set the name of your preset here.
      *
-     * Presets are a way to have more than one file output, for example: https://the-guild.dev/graphql/codegen/docs/presets/near-operation-file
+     * Presets are a way to have more than one file output, for example: https://graphql-code-generator.com/docs/presets/near-operation-file
      *
      * You can either specify a preset from the community using the NPM package name (after you installed it in your project), or you can use a path to a local file for a custom preset.
      *
      * List of available presets: https://graphql-code-generator.com/docs/presets/presets-index
      */
-    preset?: PresetNames | OutputPreset;
+    preset?: string | OutputPreset;
     /**
      * @description If your setup uses Preset to have a more dynamic setup and output, set the configuration object of your preset here.
      *
@@ -326,14 +302,6 @@ export namespace Types {
      * For more details: https://graphql-code-generator.com/docs/config-reference/lifecycle-hooks
      */
     hooks?: Partial<LifecycleHooksDefinition>;
-    /**
-     * @description DocumentTransform changes documents before executing plugins.
-     */
-    documentTransforms?: OutputDocumentTransform[];
-    /**
-     * @description: Additional file pattern to watch when using watch mode
-     */
-    watchPattern?: string | string[];
   }
 
   /* Output Builder Preset */
@@ -358,15 +326,10 @@ export namespace Types {
     };
     profiler?: Profiler;
     cache?<T>(namespace: string, key: string, factory: () => Promise<T>): Promise<T>;
-    documentTransforms?: ConfiguredDocumentTransform[];
   };
 
   export type OutputPreset<TPresetConfig = any> = {
     buildGeneratesSection: (options: PresetFnArgs<TPresetConfig>) => Promisable<GenerateOptions[]>;
-    prepareDocuments?: (
-      outputFilePath: string,
-      outputSpecificDocuments: Types.OperationDocument[]
-    ) => Promisable<Types.OperationDocument[]>;
   };
 
   /* Require Extensions */
@@ -460,8 +423,6 @@ export namespace Types {
      */
     watch?: boolean | string | string[];
     /**
-     * @deprecated this is not necessary since we are using `@parcel/watcher` instead of `chockidar`.
-     *
      * @description Allows overriding the behavior of watch to use stat polling over native file watching support.
      *
      * Config fields have the same defaults and sematics as the identically named ones for chokidar.
@@ -526,15 +487,11 @@ export namespace Types {
       /**
        * @description Configures the magic GraphQL comments to look for. The default is `GraphQL`.
        */
-      gqlMagicComment?: string;
+      magicComment?: string;
       /**
        * @description Overrides the name of the default GraphQL name identifier.
        */
       globalIdentifier?: string;
-      /**
-       * @description Allows to use a global identifier instead of a module import.
-       */
-      globalGqlIdentifierName?: string | string[];
     };
     /**
      * @description Specifies scripts to run when events are happening in the codegen core.
@@ -548,62 +505,51 @@ export namespace Types {
   export type ComplexPluginOutput = { content: string; prepend?: string[]; append?: string[] };
   export type PluginOutput = string | ComplexPluginOutput;
   export type HookFunction = (...args: any[]) => void | Promise<void>;
-  export type HookAlterFunction = (...args: any[]) => void | string | Promise<void | string>;
-
-  export type LifeCycleHookValue = string | HookFunction | (string | HookFunction)[];
-  export type LifeCycleAlterHookValue =
-    | string
-    | HookFunction
-    | HookAlterFunction
-    | (string | HookFunction | HookAlterFunction)[];
 
   /**
    * @description All available lifecycle hooks
    * @additionalProperties false
    */
-  export type LifecycleHooksDefinition = {
+  export type LifecycleHooksDefinition<T = string | HookFunction | (string | HookFunction)[]> = {
     /**
      * @description Triggered with no arguments when the codegen starts (after the `codegen.yml` has beed parsed).
      *
      * Specify a shell command to run.
      */
-    afterStart: LifeCycleHookValue;
+    afterStart: T;
     /**
      * @description Triggered with no arguments, right before the codegen closes, or when watch mode is stopped.
      *
      * Specify a shell command to run.
      */
-    beforeDone: LifeCycleHookValue;
+    beforeDone: T;
     /**
      * @description Triggered every time a file changes when using watch mode.
      * Triggered with two arguments: the type of the event (for example, `changed`) and the path of the file.
      */
-    onWatchTriggered: LifeCycleHookValue;
+    onWatchTriggered: T;
     /**
      * @description Triggered in case of a general error in the codegen. The argument is a string containing the error.
      */
-    onError: LifeCycleHookValue;
+    onError: T;
     /**
      * @description Triggered after a file is written to the file-system. Executed with the path for the file.
      * If the content of the file hasn't changed since last execution - this hooks won't be triggered.
      *
      * > This is a very useful hook, you can use it for integration with Prettier or other linters.
      */
-    afterOneFileWrite: LifeCycleHookValue;
+    afterOneFileWrite: T;
     /**
      * @description Executed after writing all the files to the file-system.
      * Triggered with multiple arguments - paths for all files.
      */
-    afterAllFileWrite: LifeCycleHookValue;
+    afterAllFileWrite: T;
     /**
-     * @description Triggered before a file is written to the file-system.
-     * Executed with the path and content for the file.
-     *
-     * Returning a string will override the content of the file.
+     * @description Triggered before a file is written to the file-system. Executed with the path for the file.
      *
      * If the content of the file hasn't changed since last execution - this hooks won't be triggered.
      */
-    beforeOneFileWrite: LifeCycleAlterHookValue;
+    beforeOneFileWrite: T;
     /**
      * @description Executed after the codegen has done creating the output and before writing the files to the file-system.
      *
@@ -611,7 +557,7 @@ export namespace Types {
      *
      * > Not all the files will be actually written to the file-system, because this is triggered before checking if the file has changed since last execution.
      */
-    beforeAllFileWrite: LifeCycleHookValue;
+    beforeAllFileWrite: T;
   };
 
   export type SkipDocumentsValidationOptions =
@@ -631,32 +577,10 @@ export namespace Types {
         skipValidationAgainstSchema?: boolean;
       }
     | boolean;
-
-  export type DocumentTransformFunction<Config = object> = (options: {
-    documents: Types.DocumentFile[];
-    schema: DocumentNode;
-    config: Config;
-    pluginContext?: { [key: string]: any };
-  }) => Types.Promisable<Types.DocumentFile[]>;
-
-  export type DocumentTransformObject<T = object> = {
-    transform: DocumentTransformFunction<T>;
-  };
-
-  export type DocumentTransformFileName = string;
-  export type DocumentTransformFileConfig<T = object> = { [name: DocumentTransformFileName]: T };
-  export type DocumentTransformFile<T> = DocumentTransformFileName | DocumentTransformFileConfig<T>;
-
-  export type OutputDocumentTransform<T = object> = DocumentTransformObject<T> | DocumentTransformFile<T>;
-  export type ConfiguredDocumentTransform<T = object> = {
-    name: string;
-    transformObject: DocumentTransformObject<T>;
-    config?: T;
-  };
 }
 
 export function isComplexPluginOutput(obj: Types.PluginOutput): obj is Types.ComplexPluginOutput {
-  return typeof obj === 'object' && Object.prototype.hasOwnProperty.call(obj, 'content');
+  return typeof obj === 'object' && obj.hasOwnProperty('content');
 }
 
 export type PluginFunction<T = any, TOutput extends Types.PluginOutput = Types.PluginOutput> = (

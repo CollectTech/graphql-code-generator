@@ -1,13 +1,13 @@
 ---
 title: hasura-allow-list
-description: Generate hasura allow list metadata from graphql files.
 ---
 
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('hasura-allow-list')
+
+<PackageHeader />
 
 Generate hasura allow list metadata from graphql files
 
@@ -17,18 +17,12 @@ This can be useful to keep your allow list and front end code in sync.
 
 ## Examples
 
-```ts filename="codegen.ts" {7}
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  // ...
-  generates: {
-    'path/to/metadata/allow_list.yaml': {
-      plugins: ['hasura-allow-list']
-    }
-  }
-}
-export default config
+```yaml {5}
+# …
+generates:
+  path/to/metadata/allow_list.yaml:
+    plugins:
+      - hasura-allow-list
 ```
 
-<PluginApiDocs />
+<PackageApiDocs />

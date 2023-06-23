@@ -1,20 +1,20 @@
 ---
 title: graphql-modules-preset
-description: GraphQL Code Generator preset for graphql-modules. It generates a single file with all the modules and their dependencies.
 ---
 
 import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename)
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<PluginHeader />
+export const getStaticProps = getNpmInfo('graphql-modules-preset')
+
+<PackageHeader />
 
 The `@graphql-codegen/graphql-modules-preset` generates `.ts` file with TypeScript types, per each directory that contains GraphQL SDL definitions.
 
 The generates files will be generated based on each module definition, and based on the GraphQL schema defined in that specific module, allowing you to write type-safe resolvers, while keeping modules types boundaries.
 
-<Callout type="warning">
+<Callout type="warning" emoji="⚠️">
 **Usage Requirements**
 
 This preset generates code for `graphql-modules` @ `v1` / `v2` (previous versions are not supported) by default.
@@ -42,31 +42,19 @@ Given a folder structure with the following files:
 
 Here's a short example for generating types and resolvers for 2 modules:
 
-```ts filename="codegen.ts"
-import type { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: './src/modules/**/typedefs/*.graphql',
-  generates: {
-    './src/modules/': {
-      preset: 'graphql-modules',
-      presetConfig: {
-        baseTypesPath: '../generated-types/graphql.ts',
-        filename: 'generated-types/module-types.ts'
-      },
-      plugins: [
-        {
-          add: {
-            content: '/* eslint-disable */'
-          }
-        },
-        'typescript',
-        'typescript-resolvers'
-      ]
-    }
-  }
-}
-export default config
+```yaml
+schema: './src/modules/**/typedefs/*.graphql'
+generates:
+  ./server/src/modules/:
+    preset: graphql-modules
+    presetConfig:
+      baseTypesPath: ../generated-types/graphql.ts # Where to create the complete schema types
+      filename: generated-types/module-types.ts # Where to create each module types
+    plugins:
+      - add:
+          content: '/* eslint-disable */'
+      - typescript
+      - typescript-resolvers
 ```
 
 This will generate a file called `module-types.ts` under each module you have.
@@ -90,4 +78,4 @@ export const resolvers: MyModule.Resolvers = {
 
 By default, this preset it generating code for `graphql-modules`, but if you are not using it, you can set `useGraphQLModules: false{:yaml}` in your preset configuration to generate fully agnostic types that are based on folder structure only.
 
-<PluginApiDocs />
+<PackageApiDocs />

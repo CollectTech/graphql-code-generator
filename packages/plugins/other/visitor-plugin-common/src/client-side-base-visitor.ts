@@ -1,26 +1,22 @@
-import { basename, extname } from 'path';
-import { oldVisit, Types } from '@graphql-codegen/plugin-helpers';
-import { optimizeDocumentNode } from '@graphql-tools/optimize';
+import { BaseVisitor, ParsedConfig, RawConfig } from './base-visitor.js';
 import autoBind from 'auto-bind';
-import { pascalCase } from 'change-case-all';
-import { DepGraph } from 'dependency-graph';
 import {
-  DefinitionNode,
-  DirectiveNode,
-  DocumentNode,
   FragmentDefinitionNode,
+  print,
+  OperationDefinitionNode,
   FragmentSpreadNode,
   GraphQLSchema,
   Kind,
-  OperationDefinitionNode,
-  SelectionNode,
-  print,
 } from 'graphql';
+import { DepGraph } from 'dependency-graph';
 import gqlTag from 'graphql-tag';
-import { BaseVisitor, ParsedConfig, RawConfig } from './base-visitor.js';
+import { oldVisit, Types } from '@graphql-codegen/plugin-helpers';
+import { getConfigValue, buildScalarsFromConfig } from './utils.js';
 import { LoadedFragment, ParsedImport } from './types.js';
-import { buildScalarsFromConfig, unique, flatten, getConfigValue, groupBy } from './utils.js';
-import { FragmentImport, ImportDeclaration, generateFragmentImportStatement } from './imports.js';
+import { basename, extname } from 'path';
+import { pascalCase } from 'change-case-all';
+import { generateFragmentImportStatement } from './imports.js';
+import { optimizeDocumentNode } from '@graphql-tools/optimize';
 
 gqlTag.enableExperimentalFragmentVariables();
 
@@ -48,40 +44,16 @@ export interface RawClientSideBasePluginConfig extends RawConfig {
    * @exampleMarkdown
    * ## graphql.macro
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          gqlImport: 'graphql.macro#gql'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   gqlImport: graphql.macro#gql
    * ```
    *
    * ## Gatsby
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          gqlImport: 'gatsby#graphql'
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   gqlImport: gatsby#graphql
    * ```
    */
   gqlImport?: string;
@@ -164,40 +136,16 @@ export interface RawClientSideBasePluginConfig extends RawConfig {
    * - 'near-operation-file': This is a special mode that is intended to be used with `near-operation-file` preset to import document nodes from those files. If these files are `.graphql` files, we make use of webpack loader.
    *
    * @exampleMarkdown
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          documentMode: 'external',
-   *          importDocumentNodeExternallyFrom: 'path/to/document-node-file',
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   documentMode: external
+   *   importDocumentNodeExternallyFrom: path/to/document-node-file
    * ```
    *
-   * ```ts filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    // ...
-   *    generates: {
-   *      'path/to/file': {
-   *        // plugins...
-   *        config: {
-   *          documentMode: 'external',
-   *          importDocumentNodeExternallyFrom: 'near-operation-file',
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml
+   * config:
+   *   documentMode: external
+   *   importDocumentNodeExternallyFrom: near-operation-file
    * ```
    *
    */
@@ -232,13 +180,7 @@ export interface ClientSideBasePluginConfig extends ParsedConfig {
   pureMagicComment?: boolean;
   optimizeDocumentNode: boolean;
   experimentalFragmentVariables?: boolean;
-  unstable_onExecutableDocumentNode?: Unstable_OnExecutableDocumentNode;
-  unstable_omitDefinitions?: boolean;
 }
-
-type ExecutableDocumentNodeMeta = Record<string, unknown>;
-
-type Unstable_OnExecutableDocumentNode = (documentNode: DocumentNode) => void | ExecutableDocumentNodeMeta;
 
 export class ClientSideBaseVisitor<
   TRawConfig extends RawClientSideBasePluginConfig = RawClientSideBasePluginConfig,
@@ -249,13 +191,9 @@ export class ClientSideBaseVisitor<
   protected _additionalImports: string[] = [];
   protected _imports = new Set<string>();
 
-  private _onExecutableDocumentNode?: Unstable_OnExecutableDocumentNode;
-  private _omitDefinitions?: boolean;
-  private _fragments: Map<string, LoadedFragment>;
-
   constructor(
     protected _schema: GraphQLSchema,
-    fragments: LoadedFragment[],
+    protected _fragments: LoadedFragment[],
     rawConfig: TRawConfig,
     additionalConfig: Partial<TPluginConfig>,
     documents?: Types.DocumentFile[]
@@ -285,10 +223,9 @@ export class ClientSideBaseVisitor<
       experimentalFragmentVariables: getConfigValue(rawConfig.experimentalFragmentVariables, false),
       ...additionalConfig,
     } as any);
+
     this._documents = documents;
-    this._onExecutableDocumentNode = (rawConfig as any).unstable_onExecutableDocumentNode;
-    this._omitDefinitions = (rawConfig as any).unstable_omitDefinitions;
-    this._fragments = new Map(fragments.map(fragment => [fragment.name, fragment]));
+
     autoBind(this);
   }
 
@@ -308,7 +245,7 @@ export class ClientSideBaseVisitor<
           names.add(node.name.value);
 
           if (withNested) {
-            const foundFragment = this._fragments.get(node.name.value);
+            const foundFragment = this._fragments.find(f => f.name === node.name.value);
 
             if (foundFragment) {
               const childItems = this._extractFragments(foundFragment.node, true);
@@ -327,14 +264,20 @@ export class ClientSideBaseVisitor<
     return Array.from(names);
   }
 
-  protected _transformFragments(fragmentNames: Array<string>): string[] {
-    return fragmentNames.map(document => this.getFragmentVariableName(document));
+  protected _transformFragments(document: FragmentDefinitionNode | OperationDefinitionNode): string[] {
+    const includeNestedFragments =
+      this.config.documentMode === DocumentMode.documentNode ||
+      (this.config.dedupeFragments && document.kind === 'OperationDefinition');
+
+    return this._extractFragments(document, includeNestedFragments).map(document =>
+      this.getFragmentVariableName(document)
+    );
   }
 
   protected _includeFragments(fragments: string[], nodeKind: 'FragmentDefinition' | 'OperationDefinition'): string {
     if (fragments && fragments.length > 0) {
-      if (this.config.documentMode === DocumentMode.documentNode || this.config.documentMode === DocumentMode.string) {
-        return Array.from(this._fragments.values())
+      if (this.config.documentMode === DocumentMode.documentNode) {
+        return this._fragments
           .filter(f => fragments.includes(this.getFragmentVariableName(f.name)))
           .map(fragment => print(fragment.node))
           .join('\n');
@@ -345,7 +288,7 @@ export class ClientSideBaseVisitor<
       if (this.config.dedupeFragments && nodeKind !== 'OperationDefinition') {
         return '';
       }
-      return String(fragments.map(name => '${' + name + '}').join('\n'));
+      return `${fragments.map(name => '${' + name + '}').join('\n')}`;
     }
 
     return '';
@@ -356,12 +299,7 @@ export class ClientSideBaseVisitor<
   }
 
   protected _gql(node: FragmentDefinitionNode | OperationDefinitionNode): string {
-    const includeNestedFragments =
-      this.config.documentMode === DocumentMode.documentNode ||
-      this.config.documentMode === DocumentMode.string ||
-      (this.config.dedupeFragments && node.kind === 'OperationDefinition');
-    const fragmentNames = this._extractFragments(node, includeNestedFragments);
-    const fragments = this._transformFragments(fragmentNames);
+    const fragments = this._transformFragments(node);
 
     const doc = this._prepareDocument(`
     ${print(node).split('\\').join('\\\\') /* Re-escape escaped values in GraphQL syntax */}
@@ -377,127 +315,30 @@ export class ClientSideBaseVisitor<
       return JSON.stringify(gqlObj);
     }
     if (this.config.documentMode === DocumentMode.documentNodeImportFragments) {
-      const gqlObj = gqlTag([doc]);
-
-      // We need to inline all fragments that are used in this document
-      // Otherwise we might encounter the following issues:
-      // 1. missing fragments
-      // 2. duplicated fragments
-
-      const fragmentDependencyNames = new Set(
-        fragmentNames.map(name => this.fragmentsGraph.dependenciesOf(name)).flatMap(item => item)
-      );
-
-      for (const fragmentName of fragmentNames) {
-        fragmentDependencyNames.add(fragmentName);
-      }
-
-      const jsonStringify = (json: unknown) =>
-        JSON.stringify(json, (key, value) => (key === 'loc' ? undefined : value));
-
-      let definitions = [...gqlObj.definitions];
-
-      for (const fragmentName of fragmentDependencyNames) {
-        definitions.push(this.fragmentsGraph.getNodeData(fragmentName).node);
-      }
+      let gqlObj = gqlTag([doc]);
 
       if (this.config.optimizeDocumentNode) {
-        definitions = [
-          ...optimizeDocumentNode({
-            kind: Kind.DOCUMENT,
-            definitions,
-          }).definitions,
-        ];
+        gqlObj = optimizeDocumentNode(gqlObj);
       }
 
-      let metaString = '';
-      if (this._onExecutableDocumentNode && node.kind === Kind.OPERATION_DEFINITION) {
-        const meta = this._getGraphQLCodegenMetadata(node, definitions);
+      if (fragments.length > 0 && (!this.config.dedupeFragments || node.kind === 'OperationDefinition')) {
+        const definitions = [
+          ...gqlObj.definitions.map(t => JSON.stringify(t)),
+          ...fragments.map(name => `...${name}.definitions`),
+        ].join();
 
-        if (meta) {
-          if (this._omitDefinitions === true) {
-            return `{${`"__meta__":${JSON.stringify(meta)},`.slice(0, -1)}}`;
-          }
-
-          metaString = `"__meta__":${JSON.stringify(meta)},`;
-        }
+        return `{"kind":"${Kind.DOCUMENT}","definitions":[${definitions}]}`;
       }
 
-      return `{${metaString}"kind":"${Kind.DOCUMENT}","definitions":${jsonStringify(definitions)}}`;
+      return JSON.stringify(gqlObj);
     }
-
     if (this.config.documentMode === DocumentMode.string) {
-      if (node.kind === Kind.FRAGMENT_DEFINITION) {
-        return `new TypedDocumentString(\`${doc}\`, ${JSON.stringify({ fragmentName: node.name.value })})`;
-      }
-
-      if (this._onExecutableDocumentNode && node.kind === Kind.OPERATION_DEFINITION) {
-        const meta = this._getGraphQLCodegenMetadata(node, gqlTag([doc]).definitions);
-
-        if (meta) {
-          if (this._omitDefinitions === true) {
-            return `{${`"__meta__":${JSON.stringify(meta)},`.slice(0, -1)}}`;
-          }
-          return `new TypedDocumentString(\`${doc}\`, ${JSON.stringify(meta)})`;
-        }
-      }
-
-      return `new TypedDocumentString(\`${doc}\`)`;
+      return '`' + doc + '`';
     }
 
     const gqlImport = this._parseImport(this.config.gqlImport || 'graphql-tag');
 
     return (gqlImport.propName || 'gql') + '`' + doc + '`';
-  }
-
-  protected _getGraphQLCodegenMetadata(
-    node: OperationDefinitionNode,
-    definitions?: ReadonlyArray<DefinitionNode>
-  ): Record<string, any> | void | undefined {
-    let meta: Record<string, any> | void | undefined;
-
-    meta = this._onExecutableDocumentNode({
-      kind: Kind.DOCUMENT,
-      definitions,
-    });
-
-    const deferredFields = this._findDeferredFields(node);
-    if (Object.keys(deferredFields).length) {
-      meta = {
-        ...meta,
-        deferredFields,
-      };
-    }
-
-    return meta;
-  }
-
-  protected _findDeferredFields(node: OperationDefinitionNode): { [fargmentName: string]: string[] } {
-    const deferredFields: { [fargmentName: string]: string[] } = {};
-    const queue: SelectionNode[] = [...node.selectionSet.selections];
-    while (queue.length) {
-      const selection = queue.shift();
-      if (
-        selection.kind === Kind.FRAGMENT_SPREAD &&
-        selection.directives.some((d: DirectiveNode) => d.name.value === 'defer')
-      ) {
-        const fragmentName = selection.name.value;
-        const fragment = this.fragmentsGraph.getNodeData(fragmentName);
-        if (fragment) {
-          const fields = fragment.node.selectionSet.selections.reduce<string[]>((acc, selection) => {
-            if (selection.kind === Kind.FIELD) {
-              acc.push(selection.name.value);
-            }
-            return acc;
-          }, []);
-
-          deferredFields[fragmentName] = fields;
-        }
-      } else if (selection.kind === Kind.FIELD && selection.selectionSet) {
-        queue.push(...selection.selectionSet.selections);
-      }
-    }
-    return deferredFields;
   }
 
   protected _generateFragment(fragmentDocument: FragmentDefinitionNode): string | void {
@@ -522,7 +363,7 @@ export class ClientSideBaseVisitor<
   private get fragmentsGraph(): DepGraph<LoadedFragment> {
     const graph = new DepGraph<LoadedFragment>({ circular: true });
 
-    for (const fragment of this._fragments.values()) {
+    for (const fragment of this._fragments) {
       if (graph.hasNode(fragment.name)) {
         const cachedAsString = print(graph.getNodeData(fragment.name).node);
         const asString = print(fragment.node);
@@ -535,21 +376,21 @@ export class ClientSideBaseVisitor<
       graph.addNode(fragment.name, fragment);
     }
 
-    for (const fragment of this._fragments.values()) {
+    this._fragments.forEach(fragment => {
       const depends = this._extractFragments(fragment.node);
 
       if (depends && depends.length > 0) {
-        for (const name of depends) {
+        depends.forEach(name => {
           graph.addDependency(fragment.name, name);
-        }
+        });
       }
-    }
+    });
 
     return graph;
   }
 
   public get fragments(): string {
-    if (this._fragments.size === 0 || this.config.documentMode === DocumentMode.external) {
+    if (this._fragments.length === 0 || this.config.documentMode === DocumentMode.external) {
       return '';
     }
 
@@ -607,10 +448,6 @@ export class ClientSideBaseVisitor<
   private clearExtension(path: string): string {
     const extension = extname(path);
 
-    if (!this.config.emitLegacyCommonJSImports && extension === '.js') {
-      return path;
-    }
-
     if (EXTENSIONS_TO_REMOVE.includes(extension)) {
       return path.replace(/\.[^/.]+$/, '');
     }
@@ -619,9 +456,7 @@ export class ClientSideBaseVisitor<
   }
 
   public getImports(options: { excludeFragments?: boolean } = {}): string[] {
-    for (const i of this._additionalImports || []) {
-      this._imports.add(i);
-    }
+    (this._additionalImports || []).forEach(i => this._imports.add(i));
 
     switch (this.config.documentMode) {
       case DocumentMode.documentNode:
@@ -648,12 +483,9 @@ export class ClientSideBaseVisitor<
       case DocumentMode.external: {
         if (this._collectedOperations.length > 0) {
           if (this.config.importDocumentNodeExternallyFrom === 'near-operation-file' && this._documents.length === 1) {
-            let documentPath = `./${this.clearExtension(basename(this._documents[0].location))}`;
-            if (!this.config.emitLegacyCommonJSImports) {
-              documentPath += '.js';
-            }
-
-            this._imports.add(`import * as Operations from '${documentPath}';`);
+            this._imports.add(
+              `import * as Operations from './${this.clearExtension(basename(this._documents[0].location))}.js';`
+            );
           } else {
             if (!this.config.importDocumentNodeExternallyFrom) {
               // eslint-disable-next-line no-console
@@ -671,28 +503,47 @@ export class ClientSideBaseVisitor<
         break;
     }
 
-    const excludeFragments =
-      options.excludeFragments || this.config.globalNamespace || this.config.documentMode !== DocumentMode.graphQLTag;
+    if (!options.excludeFragments && !this.config.globalNamespace) {
+      const { documentMode, fragmentImports } = this.config;
+      if (
+        documentMode === DocumentMode.graphQLTag ||
+        documentMode === DocumentMode.string ||
+        documentMode === DocumentMode.documentNodeImportFragments
+      ) {
+        // keep track of what imports we've already generated so we don't try
+        // to import the same identifier twice
+        const alreadyImported = new Map<string, Set<string>>();
 
-    if (!excludeFragments) {
-      const deduplicatedImports = Object.values(groupBy(this.config.fragmentImports, fi => fi.importSource.path))
-        .map(
-          (fragmentImports): ImportDeclaration<FragmentImport> => ({
-            ...fragmentImports[0],
-            importSource: {
-              ...fragmentImports[0].importSource,
-              identifiers: unique(
-                flatten(fragmentImports.map(fi => fi.importSource.identifiers)),
-                identifier => identifier.name
-              ),
-            },
-            emitLegacyCommonJSImports: this.config.emitLegacyCommonJSImports,
+        const deduplicatedImports = fragmentImports
+          .map(fragmentImport => {
+            const { path, identifiers } = fragmentImport.importSource;
+            if (!alreadyImported.has(path)) {
+              alreadyImported.set(path, new Set<string>());
+            }
+
+            const alreadyImportedForPath = alreadyImported.get(path);
+            const newIdentifiers = identifiers.filter(identifier => !alreadyImportedForPath.has(identifier.name));
+            newIdentifiers.forEach(newIdentifier => alreadyImportedForPath.add(newIdentifier.name));
+
+            // filter the set of identifiers in this fragment import to only
+            // the ones we haven't already imported from this path
+            return {
+              ...fragmentImport,
+              importSource: {
+                ...fragmentImport.importSource,
+                identifiers: newIdentifiers,
+              },
+              emitLegacyCommonJSImports: this.config.emitLegacyCommonJSImports,
+            };
           })
-        )
-        .filter(fragmentImport => fragmentImport.outputPath !== fragmentImport.importSource.path);
+          // remove any imports that now have no identifiers in them
+          .filter(fragmentImport => fragmentImport.importSource.identifiers.length > 0);
 
-      for (const fragmentImport of deduplicatedImports) {
-        this._imports.add(generateFragmentImportStatement(fragmentImport, 'document'));
+        deduplicatedImports.forEach(fragmentImport => {
+          if (fragmentImport.outputPath !== fragmentImport.importSource.path) {
+            this._imports.add(generateFragmentImportStatement(fragmentImport, 'document'));
+          }
+        });
       }
     }
 

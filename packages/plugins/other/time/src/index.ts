@@ -1,8 +1,7 @@
-import { extname } from 'path';
-import { PluginFunction, Types } from '@graphql-codegen/plugin-helpers';
 import { GraphQLSchema } from 'graphql';
-// eslint-disable-next-line n/no-restricted-import -- todo: replace moment in v3
+import { PluginFunction, Types } from '@graphql-codegen/plugin-helpers';
 import moment from 'moment';
+import { extname } from 'path';
 import { TimePluginConfig } from './config.js';
 
 export const plugin: PluginFunction<TimePluginConfig> = async (

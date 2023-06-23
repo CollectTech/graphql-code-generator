@@ -1,34 +1,34 @@
-import { BaseVisitor } from '@graphql-codegen/visitor-plugin-common';
-import { pascalCase } from 'change-case-all';
 import {
+  visit,
   DocumentNode,
-  EnumTypeDefinitionNode,
-  EnumTypeExtensionNode,
-  GraphQLSchema,
-  InputObjectTypeDefinitionNode,
-  InputObjectTypeExtensionNode,
-  InterfaceTypeDefinitionNode,
-  InterfaceTypeExtensionNode,
-  isScalarType,
-  Kind,
   ObjectTypeDefinitionNode,
   ObjectTypeExtensionNode,
+  Kind,
   TypeDefinitionNode,
   TypeExtensionNode,
-  visit,
+  EnumTypeDefinitionNode,
+  EnumTypeExtensionNode,
+  InputObjectTypeDefinitionNode,
+  InputObjectTypeExtensionNode,
+  GraphQLSchema,
+  isScalarType,
+  InterfaceTypeDefinitionNode,
+  InterfaceTypeExtensionNode,
 } from 'graphql';
-import { ModulesConfig } from './config.js';
+import { pascalCase } from 'change-case-all';
 import {
-  buildBlock,
-  collectUsedTypes,
-  concatByKey,
-  createObject,
-  indent,
-  pushUnique,
   unique,
-  uniqueByKey,
   withQuotes,
+  buildBlock,
+  pushUnique,
+  concatByKey,
+  uniqueByKey,
+  createObject,
+  collectUsedTypes,
+  indent,
 } from './utils.js';
+import { ModulesConfig } from './config.js';
+import { BaseVisitor } from '@graphql-codegen/visitor-plugin-common';
 
 type RegistryKeys = 'objects' | 'inputs' | 'interfaces' | 'scalars' | 'unions' | 'enums';
 type Registry = Record<RegistryKeys, string[]>;
@@ -48,7 +48,6 @@ export function buildModule(
     schema,
     baseVisitor,
     useGraphQLModules,
-    useTypeImports = false,
   }: {
     importNamespace: string;
     importPath: string;
@@ -59,7 +58,6 @@ export function buildModule(
     baseVisitor: BaseVisitor;
     schema?: GraphQLSchema;
     useGraphQLModules: boolean;
-    useTypeImports?: boolean;
   }
 ): string {
   const picks: Record<RegistryKeys, Record<string, string[]>> = createObject(registryKeys, () => ({}));
@@ -120,10 +118,10 @@ export function buildModule(
   //
 
   // An actual output
-  const imports = [`import${useTypeImports ? ' type' : ''} * as ${importNamespace} from "${importPath}";`];
+  const imports = [`import * as ${importNamespace} from "${importPath}";`];
 
   if (useGraphQLModules) {
-    imports.push(`import${useTypeImports ? ' type' : ''} * as gm from "graphql-modules";`);
+    imports.push(`import * as gm from "graphql-modules";`);
   }
 
   let content = [
@@ -151,7 +149,7 @@ export function buildModule(
       '\n}';
   }
 
-  return [...(shouldDeclare ? [] : imports), content].filter(Boolean).join('\n');
+  return [...(!shouldDeclare ? imports : []), content].filter(Boolean).join('\n');
 
   /**
    * A dictionary of fields to pick from an object
@@ -249,12 +247,12 @@ export function buildModule(
 
     for (const kind in registry) {
       const k = kind as RegistryKeys;
-      if (Object.prototype.hasOwnProperty.call(registry, k) && resolverKeys.includes(k as any)) {
+      if (registry.hasOwnProperty(k) && resolverKeys.includes(k as any)) {
         const types = registry[k];
 
-        for (const typeName of types) {
+        types.forEach(typeName => {
           if (k === 'enums') {
-            continue;
+            return;
           }
           if (k === 'scalars') {
             lines.push(`${typeName}?: ${encapsulateTypeName(importNamespace)}.Resolvers['${typeName}'];`);
@@ -264,7 +262,7 @@ export function buildModule(
 
             lines.push(`${typeName}${fieldModifier}: ${encapsulateTypeName(typeName)}Resolvers;`);
           }
-        }
+        });
       }
     }
 
@@ -283,7 +281,7 @@ export function buildModule(
 
     // Type.Field
     for (const typeName in picks.objects) {
-      if (Object.prototype.hasOwnProperty.call(picks.objects, typeName)) {
+      if (picks.objects.hasOwnProperty(typeName)) {
         const fields = picks.objects[typeName];
         const lines = [wildcardField].concat(fields.map(field => printResolveMiddlewareRecord(field)));
 
@@ -378,11 +376,13 @@ export function buildModule(
     const name = node.name.value;
 
     if (node.fields) {
-      picksObj[name] ||= [];
-
-      for (const field of node.fields) {
-        picksObj[name].push(field.name.value);
+      if (!picksObj[name]) {
+        picksObj[name] = [];
       }
+
+      node.fields.forEach(field => {
+        picksObj[name].push(field.name.value);
+      });
     }
   }
 
@@ -390,11 +390,13 @@ export function buildModule(
     const name = node.name.value;
 
     if (node.values) {
-      picks.enums[name] ||= [];
-
-      for (const field of node.values) {
-        picks.enums[name].push(field.name.value);
+      if (!picks.enums[name]) {
+        picks.enums[name] = [];
       }
+
+      node.values.forEach(field => {
+        picks.enums[name].push(field.name.value);
+      });
     }
   }
 

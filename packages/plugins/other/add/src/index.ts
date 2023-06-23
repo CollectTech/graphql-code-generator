@@ -1,5 +1,5 @@
-import { PluginFunction, Types } from '@graphql-codegen/plugin-helpers';
 import { GraphQLSchema } from 'graphql';
+import { PluginFunction, Types } from '@graphql-codegen/plugin-helpers';
 import { AddPluginConfig, VALID_PLACEMENTS } from './config.js';
 
 export const plugin: PluginFunction<AddPluginConfig> = async (

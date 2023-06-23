@@ -1,21 +1,21 @@
-import { extname } from 'path';
 import {
-  getCachedDocumentNodeFromSchema,
-  PluginFunction,
-  PluginValidateFn,
-  removeFederation,
-  Types,
-} from '@graphql-codegen/plugin-helpers';
-import {
-  buildASTSchema,
-  extendSchema,
   GraphQLSchema,
   parse,
-  print,
+  extendSchema,
   printIntrospectionSchema,
   printSchema,
   visit,
+  buildASTSchema,
+  print,
 } from 'graphql';
+import {
+  PluginFunction,
+  PluginValidateFn,
+  Types,
+  removeFederation,
+  getCachedDocumentNodeFromSchema,
+} from '@graphql-codegen/plugin-helpers';
+import { extname } from 'path';
 
 /**
  * @description This plugin prints the merged schema as string. If multiple schemas are provided, they will be merged and printed as one schema.
@@ -26,21 +26,15 @@ export interface SchemaASTConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```tsx {9} filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    schema: './src/schema.graphql',
-   *    generates: {
-   *      'path/to/file.graphql': {
-   *        plugins: ['schema-ast'],
-   *        config: {
-   *          includeDirectives: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {8}
+   * schema:
+   *   - './src/schema.graphql'
+   * generates:
+   *   path/to/file.graphql:
+   *     plugins:
+   *       - schema-ast
+   *     config:
+   *       includeDirectives: true
    * ```
    */
   includeDirectives?: boolean;
@@ -49,21 +43,15 @@ export interface SchemaASTConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```tsx {9} filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    schema: './src/schema.graphql',
-   *    generates: {
-   *      'path/to/file.graphql': {
-   *        plugins: ['schema-ast'],
-   *        config: {
-   *          includeIntrospectionTypes: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {8}
+   * schema:
+   *   - './src/schema.graphql'
+   * generates:
+   *   path/to/file.graphql:
+   *     plugins:
+   *       - schema-ast
+   *     config:
+   *       includeIntrospectionTypes: true
    * ```
    */
   includeIntrospectionTypes?: boolean;
@@ -72,21 +60,14 @@ export interface SchemaASTConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```tsx {9} filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    schema: './src/schema.graphql',
-   *    generates: {
-   *      'path/to/file.graphql': {
-   *        plugins: ['schema-ast'],
-   *        config: {
-   *          commentDescriptions: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {7}
+   * schema: http://localhost:3000/graphql
+   * generates:
+   *   schema.graphql:
+   *     plugins:
+   *       - schema-ast
+   *     config:
+   *       commentDescriptions: true
    * ```
    */
   commentDescriptions?: boolean;
@@ -130,12 +111,8 @@ export const validate: PluginValidateFn<any> = async (
 ) => {
   const singlePlugin = allPlugins.length === 1;
 
-  const allowedExtensions = ['.graphql', '.gql'];
-  const isAllowedExtension = allowedExtensions.includes(extname(outputFile));
-
-  if (singlePlugin && !isAllowedExtension) {
-    const allowedExtensionsOutput = allowedExtensions.map(extension => `"${extension}"`).join(' or ');
-    throw new Error(`Plugin "schema-ast" requires extension to be ${allowedExtensionsOutput}!`);
+  if (singlePlugin && extname(outputFile) !== '.graphql') {
+    throw new Error(`Plugin "schema-ast" requires extension to be ".graphql"!`);
   }
 };
 

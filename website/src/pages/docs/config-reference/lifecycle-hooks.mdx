@@ -1,7 +1,3 @@
----
-description: Learn how to use the GraphQL Code Generator CLI to generate code from your GraphQL schema and operations.
----
-
 import { Callout } from '@theguild/components'
 
 # Lifecycle Hooks
@@ -14,46 +10,24 @@ Each hook has its arguments, and it passes them to your scripts using `argv`.
 
 ## How to use?
 
-Add your scripts to your `codegen.ts` file, and specify the scripts you wish to run, for example:
+Add your scripts to your `codegen.yml` file, and specify the scripts you wish to run, for example:
 
-```ts
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'http://localhost:4000/graphql',
-  documents: ['src/**/*.tsx'],
-  generates: {
-    './src/gql/': {
-      preset: 'client'
-    }
-  },
-  hooks: {
-    afterOneFileWrite: ['prettier --write']
-  }
-}
-
-export default config
+```yaml
+hooks:
+  afterOneFileWrite:
+    - prettier --write
 ```
 
 Or, for specific output:
 
-```ts
-import { CodegenConfig } from '@graphql-codegen/cli'
-
-const config: CodegenConfig = {
-  schema: 'http://localhost:4000/graphql',
-  documents: ['src/**/*.tsx'],
-  generates: {
-    './src/gql/': {
-      preset: 'client',
-      hooks: {
-        afterOneFileWrite: ['prettier --write']
-      }
-    }
-  }
-}
-
-export default config
+```yaml
+generates:
+  ./src/types.ts:
+    hooks:
+      afterOneFileWrite:
+        - prettier --write
+    plugins:
+      - typescript
 ```
 
 ## Root Level
@@ -62,7 +36,7 @@ The following lifecycle hooks are supported on the root level:
 
 ### `afterStart`
 
-Triggered with no arguments when the codegen starts (after the `codegen.ts` has been loaded).
+Triggered with no arguments when the codegen starts (after the `codegen.yml` has been parsed).
 
 ### `onWatchTriggered`
 

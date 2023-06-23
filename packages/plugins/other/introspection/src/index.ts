@@ -1,7 +1,7 @@
-import { extname } from 'path';
-import { PluginFunction, PluginValidateFn, removeFederation, Types } from '@graphql-codegen/plugin-helpers';
-import { getConfigValue } from '@graphql-codegen/visitor-plugin-common';
 import { GraphQLSchema, introspectionFromSchema } from 'graphql';
+import { PluginFunction, PluginValidateFn, Types, removeFederation } from '@graphql-codegen/plugin-helpers';
+import { extname } from 'path';
+import { getConfigValue } from '@graphql-codegen/visitor-plugin-common';
 
 /**
  * @description This plugin generates a GraphQL introspection file based on your GraphQL schema.
@@ -12,22 +12,13 @@ export interface IntrospectionPluginConfig {
    * @default false
    *
    * @exampleMarkdown
-   * ```tsx {10} filename="codegen.ts"
-   *  import type { CodegenConfig } from '@graphql-codegen/cli';
-   *
-   *  const config: CodegenConfig = {
-   *    schema: 'https://localhost:4000/graphql',
-   *    documents: ['src/**\/*.tsx'],
-   *    generates: {
-   *      'introspection.json': {
-   *        plugins: ['introspection'],
-   *        config: {
-   *          minify: true
-   *        },
-   *      },
-   *    },
-   *  };
-   *  export default config;
+   * ```yaml {6}
+   * generates:
+   *   introspection.json:
+   *     plugins:
+   *       - introspection
+   *     config:
+   *       minify: true
    * ```
    */
   minify?: boolean;

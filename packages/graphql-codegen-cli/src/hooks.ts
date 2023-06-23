@@ -1,10 +1,9 @@
+import { Types } from '@graphql-codegen/plugin-helpers';
+import { debugLog } from './utils/debugging.js';
 import { exec } from 'child_process';
 import { delimiter, sep } from 'path';
-import { Types } from '@graphql-codegen/plugin-helpers';
-import { quote } from 'shell-quote';
-import { debugLog } from './utils/debugging.js';
 
-const DEFAULT_HOOKS: Types.LifecycleHooksDefinition = {
+const DEFAULT_HOOKS: Types.LifecycleHooksDefinition<string[]> = {
   afterStart: [],
   beforeDone: [],
   onWatchTriggered: [],
@@ -14,6 +13,37 @@ const DEFAULT_HOOKS: Types.LifecycleHooksDefinition = {
   beforeOneFileWrite: [],
   beforeAllFileWrite: [],
 };
+
+function normalizeHooks(
+  _hooks: Partial<Types.LifecycleHooksDefinition>
+): Types.LifecycleHooksDefinition<(string | Types.HookFunction)[]> {
+  const keys = Object.keys({
+    ...DEFAULT_HOOKS,
+    ..._hooks,
+  });
+
+  return keys.reduce((prev: Types.LifecycleHooksDefinition<(string | Types.HookFunction)[]>, hookName: string) => {
+    if (typeof _hooks[hookName] === 'string') {
+      return {
+        ...prev,
+        [hookName]: [_hooks[hookName]] as string[],
+      };
+    }
+    if (typeof _hooks[hookName] === 'function') {
+      return {
+        ...prev,
+        [hookName]: [_hooks[hookName]],
+      };
+    }
+    if (Array.isArray(_hooks[hookName])) {
+      return {
+        ...prev,
+        [hookName]: _hooks[hookName] as string[],
+      };
+    }
+    return prev;
+  }, {} as Types.LifecycleHooksDefinition<(string | Types.HookFunction)[]>);
+}
 
 function execShellCommand(cmd: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -28,8 +58,6 @@ function execShellCommand(cmd: string): Promise<string> {
       (error, stdout, stderr) => {
         if (error) {
           reject(error);
-          // eslint-disable-next-line no-console
-          console.error(error);
         } else {
           debugLog(stdout || stderr);
           resolve(stdout || stderr);
@@ -41,64 +69,38 @@ function execShellCommand(cmd: string): Promise<string> {
 
 async function executeHooks(
   hookName: string,
-  _scripts: Types.LifeCycleHookValue | Types.LifeCycleAlterHookValue = [],
-  args: string[] = [],
-  initialState?: string
-): Promise<void | string> {
+  scripts: (string | Types.HookFunction)[] = [],
+  args: string[] = []
+): Promise<void> {
   debugLog(`Running lifecycle hook "${hookName}" scripts...`);
-  let state = initialState;
-  const scripts = Array.isArray(_scripts) ? _scripts : [_scripts];
 
-  const quotedArgs = quote(args);
   for (const script of scripts) {
     if (typeof script === 'string') {
-      debugLog(`Running lifecycle hook "${hookName}" script: ${script} with args: ${quotedArgs}...`);
-      await execShellCommand(`${script} ${quotedArgs}`);
+      debugLog(`Running lifecycle hook "${hookName}" script: ${script} with args: ${args.join(' ')}...`);
+      await execShellCommand(`${script} ${args.join(' ')}`);
     } else {
       debugLog(`Running lifecycle hook "${hookName}" script: ${script.name} with args: ${args.join(' ')}...`);
-      const hookArgs = state === undefined ? args : [...args, state];
-      const hookResult = await script(...hookArgs);
-      if (typeof hookResult === 'string' && typeof state === 'string') {
-        debugLog(`Received new content from lifecycle hook "${hookName}" script: ${script.name}`);
-        state = hookResult;
-      }
+      await script(...args);
     }
   }
-
-  return state;
 }
 
 export const lifecycleHooks = (_hooks: Partial<Types.LifecycleHooksDefinition> = {}) => {
-  const hooks = {
-    ...DEFAULT_HOOKS,
-    ..._hooks,
-  };
+  const hooks = normalizeHooks(_hooks);
 
   return {
-    afterStart: async (): Promise<void> => {
-      await executeHooks('afterStart', hooks.afterStart);
-    },
-    onWatchTriggered: async (event: string, path: string): Promise<void> => {
-      await executeHooks('onWatchTriggered', hooks.onWatchTriggered, [event, path]);
-    },
-    onError: async (error: string): Promise<void> => {
-      await executeHooks('onError', hooks.onError, [error]);
-    },
-    afterOneFileWrite: async (path: string): Promise<void> => {
-      await executeHooks('afterOneFileWrite', hooks.afterOneFileWrite, [path]);
-    },
-    afterAllFileWrite: async (paths: string[]): Promise<void> => {
-      await executeHooks('afterAllFileWrite', hooks.afterAllFileWrite, paths);
-    },
-    beforeOneFileWrite: async (path: string, content: string): Promise<string> => {
-      const result = await executeHooks('beforeOneFileWrite', hooks.beforeOneFileWrite, [path], content);
-      return typeof result === 'string' ? result : content;
-    },
-    beforeAllFileWrite: async (paths: string[]): Promise<void> => {
-      await executeHooks('beforeAllFileWrite', hooks.beforeAllFileWrite, paths);
-    },
-    beforeDone: async (): Promise<void> => {
-      await executeHooks('beforeDone', hooks.beforeDone);
-    },
+    afterStart: async (): Promise<void> => executeHooks('afterStart', hooks.afterStart),
+    onWatchTriggered: async (event: string, path: string): Promise<void> =>
+      executeHooks('onWatchTriggered', hooks.onWatchTriggered, [event, path]),
+    onError: async (error: string): Promise<void> => executeHooks('onError', hooks.onError, [`"${error}"`]),
+    afterOneFileWrite: async (path: string): Promise<void> =>
+      executeHooks('afterOneFileWrite', hooks.afterOneFileWrite, [path]),
+    afterAllFileWrite: async (paths: string[]): Promise<void> =>
+      executeHooks('afterAllFileWrite', hooks.afterAllFileWrite, paths),
+    beforeOneFileWrite: async (path: string): Promise<void> =>
+      executeHooks('beforeOneFileWrite', hooks.beforeOneFileWrite, [path]),
+    beforeAllFileWrite: async (paths: string[]): Promise<void> =>
+      executeHooks('beforeAllFileWrite', hooks.beforeAllFileWrite, paths),
+    beforeDone: async (): Promise<void> => executeHooks('beforeDone', hooks.beforeDone),
   };
 };

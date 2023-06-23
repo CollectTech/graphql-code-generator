@@ -9,14 +9,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
       - name: Fetch
         run: git fetch origin master
-
-      - name: Setup env
-        uses: the-guild-org/shared-config/setup@main
+      - name: Use Node 18
+        uses: actions/setup-node@master
         with:
-          nodeVersion: 18
+          node-version: 18
+          cache: 'yarn'
+
+      - name: Cache Node Modules
+        uses: actions/cache@v3
+        id: node-modules-cache-website-integrity
+        with:
+          path: '**/node_modules'
+          key: ${{runner.os}}-18-node-modules-${{hashFiles('yarn.lock')}}
+          restore-keys: |
+            ${{runner.os}}-18-node-modules-
+      - name: Install Dependencies using Yarn
+        run: yarn install --ignore-engines --frozen-lockfile --immutable
+        if: steps.node-modules-cache-website-integrity.outputs.cache-hit != 'true'
 
       - name: Build Packages
         run: yarn build

@@ -1,13 +1,13 @@
-import autoBind from 'auto-bind';
-import { DirectiveNode, Kind, NameNode, TypeNode, ValueNode, VariableNode } from 'graphql';
-import { BaseVisitorConvertOptions } from './base-visitor.js';
+import { Kind, TypeNode, VariableNode, NameNode, ValueNode, DirectiveNode } from 'graphql';
+import { indent, getBaseTypeNode } from './utils.js';
 import {
-  ConvertNameFn,
   NormalizedScalarsMap,
-  ParsedDirectiveArgumentAndInputFieldMappings,
+  ConvertNameFn,
   ParsedEnumValuesMap,
+  ParsedDirectiveArgumentAndInputFieldMappings,
 } from './types.js';
-import { getBaseTypeNode, indent } from './utils.js';
+import { BaseVisitorConvertOptions } from './base-visitor.js';
+import autoBind from 'auto-bind';
 
 export interface InterfaceOrVariable {
   name?: NameNode;
@@ -24,7 +24,6 @@ export class OperationVariablesToObject {
     protected _namespacedImportName: string | null = null,
     protected _enumNames: string[] = [],
     protected _enumPrefix = true,
-    protected _enumSuffix = true,
     protected _enumValues: ParsedEnumValuesMap = {},
     protected _applyCoercion: Boolean = false,
     protected _directiveArgumentAndInputFieldMappings: ParsedDirectiveArgumentAndInputFieldMappings = {}
@@ -61,7 +60,7 @@ export class OperationVariablesToObject {
   protected getScalar(name: string): string {
     const prefix = this._namespacedImportName ? `${this._namespacedImportName}.` : '';
 
-    return `${prefix}Scalars['${name}']['input']`;
+    return `${prefix}Scalars['${name}']`;
   }
 
   protected getDirectiveMapping(name: string): string {
@@ -100,12 +99,11 @@ export class OperationVariablesToObject {
         typeValue = overrideType;
       } else if (this._scalars[typeName]) {
         typeValue = this.getScalar(typeName);
-      } else if (this._enumValues[typeName]?.sourceFile) {
+      } else if (this._enumValues[typeName] && this._enumValues[typeName].sourceFile) {
         typeValue = this._enumValues[typeName].typeIdentifier || this._enumValues[typeName].sourceIdentifier;
       } else {
         typeValue = `${prefix}${this._convertName(baseType, {
           useTypesPrefix: this._enumNames.includes(typeName) ? this._enumPrefix : true,
-          useTypesSuffix: this._enumNames.includes(typeName) ? this._enumSuffix : true,
         })}`;
       }
     }
@@ -126,7 +124,7 @@ export class OperationVariablesToObject {
     throw new Error(`You must override "wrapAstTypeWithModifiers" of OperationVariablesToObject!`);
   }
 
-  protected formatFieldString(fieldName: string, _isNonNullType: boolean, _hasDefaultValue: boolean): string {
+  protected formatFieldString(fieldName: string, isNonNullType: boolean, _hasDefaultValue: boolean): string {
     return fieldName;
   }
 

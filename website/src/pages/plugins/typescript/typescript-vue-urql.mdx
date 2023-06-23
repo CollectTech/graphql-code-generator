@@ -1,23 +1,14 @@
 ---
 title: typescript-vue-urql
-description: GraphQL Code Generator plugin for Vue.js and urql. It generates Vue.js components and urql hooks. It also generates TypeScript types.
 ---
 
-import { Callout } from '@theguild/components'
-import { PluginApiDocs, PluginHeader } from '@/components/plugin'
-import { pluginGetStaticProps } from '@/lib/plugin-get-static-props'
-export const getStaticProps = pluginGetStaticProps(__filename, { hasOperationsNote: true })
+import { PackageApiDocs, PackageHeader } from '@/components'
+import { getNpmInfo } from '@/lib/get-npm-info'
 
-<Callout type="info">
+export const getStaticProps = getNpmInfo('typescript-vue-urql')
 
-We now recommend using the `client-preset` package for a **better developer experience** and smaller impact on bundle size.
-
-**Get started on [our "React/Vue" guide](/docs/guides/react-vue).**
-
-</Callout>
-
-<PluginHeader />
-<PluginApiDocs />
+<PackageHeader hasOperationsNote />
+<PackageApiDocs />
 
 ## Usage Example
 

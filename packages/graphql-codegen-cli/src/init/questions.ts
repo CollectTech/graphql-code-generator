@@ -1,17 +1,16 @@
 import inquirer from 'inquirer';
 import { grey } from './helpers.js';
+import { Tags, Answers } from './types.js';
 import { plugins } from './plugins.js';
-import { Answers, Tags } from './types.js';
 
 export function getQuestions(possibleTargets: Record<Tags, boolean>): inquirer.QuestionCollection {
   return [
     {
-      type: 'list',
+      type: 'checkbox',
       name: 'targets',
       message: `What type of application are you building?`,
       choices: getApplicationTypeChoices(possibleTargets),
       validate: ((targets: any[]) => targets.length > 0) as any,
-      default: getApplicationTypeChoices(possibleTargets).findIndex(c => c.checked),
     },
     {
       type: 'input',
@@ -30,25 +29,14 @@ export function getQuestions(possibleTargets: Record<Tags, boolean>): inquirer.Q
         // I can't find an API in Inquirer that would do that
         answers.targets = normalizeTargets(answers.targets);
 
-        return (
-          answers.targets.includes(Tags.client) ||
-          answers.targets.includes(Tags.angular) ||
-          answers.targets.includes(Tags.stencil)
-        );
+        return answers.targets.includes(Tags.browser);
       },
-      default: getDocumentsDefaultValue,
+      default: 'src/**/*.graphql',
       validate: (str: string) => str.length > 0,
     },
     {
       type: 'checkbox',
       name: 'plugins',
-      when: answers => {
-        // flatten targets
-        // I can't find an API in Inquirer that would do that
-        answers.targets = normalizeTargets(answers.targets);
-
-        return !answers.targets.includes(Tags.client);
-      },
       message: 'Pick plugins:',
       choices: getPluginChoices,
       validate: ((plugins: any[]) => plugins.length > 0) as any,
@@ -63,24 +51,16 @@ export function getQuestions(possibleTargets: Record<Tags, boolean>): inquirer.Q
     {
       type: 'confirm',
       name: 'introspection',
-      default: false,
       message: 'Do you want to generate an introspection file?',
     },
     {
       type: 'input',
       name: 'config',
       message: 'How to name the config file?',
-      default: answers =>
-        answers.targets.includes(Tags.client) ||
-        answers.targets.includes(Tags.typescript) ||
-        answers.targets.includes(Tags.angular)
-          ? 'codegen.ts'
-          : 'codegen.yml',
+      default: 'codegen.yml',
       validate: (str: string) => {
         const isNotEmpty = str.length > 0;
-        const hasCorrectExtension = ['json', 'yml', 'yaml', 'js', 'ts'].some(ext =>
-          str.toLocaleLowerCase().endsWith(`.${ext}`)
-        );
+        const hasCorrectExtension = ['json', 'yml', 'yaml'].some(ext => str.toLocaleLowerCase().endsWith(`.${ext}`));
 
         return isNotEmpty && hasCorrectExtension;
       },
@@ -88,7 +68,6 @@ export function getQuestions(possibleTargets: Record<Tags, boolean>): inquirer.Q
     {
       type: 'input',
       name: 'script',
-      default: 'codegen',
       message: 'What script in package.json should run the codegen?',
       validate: (str: string) => str.length > 0,
     },
@@ -101,9 +80,10 @@ export function getApplicationTypeChoices(possibleTargets: Record<Tags, boolean>
       tags.push(Tags.typescript);
     } else if (possibleTargets.Flow) {
       tags.push(Tags.flow);
-    } else if (possibleTargets.Node) {
-      tags.push(Tags.typescript, Tags.flow);
+    } else {
+      tags.push(Tags.flow, Tags.typescript);
     }
+
     return tags;
   }
 
@@ -117,37 +97,25 @@ export function getApplicationTypeChoices(possibleTargets: Record<Tags, boolean>
     {
       name: 'Application built with Angular',
       key: 'angular',
-      value: [Tags.angular],
+      value: [Tags.angular, Tags.browser, Tags.typescript],
       checked: possibleTargets.Angular,
     },
     {
       name: 'Application built with React',
       key: 'react',
-      value: withFlowOrTypescript([Tags.react, Tags.client]),
+      value: withFlowOrTypescript([Tags.react, Tags.browser]),
       checked: possibleTargets.React,
     },
     {
       name: 'Application built with Stencil',
       key: 'stencil',
-      value: [Tags.stencil, Tags.typescript],
+      value: [Tags.stencil, Tags.browser, Tags.typescript],
       checked: possibleTargets.Stencil,
-    },
-    {
-      name: 'Application built with Vue',
-      key: 'vue',
-      value: [Tags.vue, Tags.client],
-      checked: possibleTargets.Vue,
-    },
-    {
-      name: 'Application using graphql-request',
-      key: 'graphqlRequest',
-      value: [Tags.graphqlRequest, Tags.client],
-      checked: possibleTargets.graphqlRequest,
     },
     {
       name: 'Application built with other framework or vanilla JS',
       key: 'client',
-      value: [Tags.typescript, Tags.flow],
+      value: [Tags.browser, Tags.typescript, Tags.flow],
       checked:
         possibleTargets.Browser && !possibleTargets.Angular && !possibleTargets.React && !possibleTargets.Stencil,
     },
@@ -171,9 +139,6 @@ function normalizeTargets(targets: Tags[] | Tags[][]): Tags[] {
 }
 
 export function getOutputDefaultValue(answers: Answers) {
-  if (answers.targets.includes(Tags.client)) {
-    return 'src/gql/';
-  }
   if (answers.plugins.some(plugin => plugin.defaultExtension === '.tsx')) {
     return 'src/generated/graphql.tsx';
   }
@@ -181,17 +146,4 @@ export function getOutputDefaultValue(answers: Answers) {
     return 'src/generated/graphql.ts';
   }
   return 'src/generated/graphql.js';
-}
-
-export function getDocumentsDefaultValue(answers: Answers) {
-  if (answers.targets.includes(Tags.vue)) {
-    return 'src/**/*.vue';
-  }
-  if (answers.targets.includes(Tags.angular)) {
-    return 'src/**/*.ts';
-  }
-  if (answers.targets.includes(Tags.client)) {
-    return 'src/**/*.tsx';
-  }
-  return 'src/**/*.graphql';
 }

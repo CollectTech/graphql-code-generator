@@ -4,52 +4,50 @@ export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
-export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type RequireFields<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]> };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string };
-  String: { input: string; output: string };
-  Boolean: { input: boolean; output: boolean };
-  Int: { input: number; output: number };
-  Float: { input: number; output: number };
+  ID: string;
+  String: string;
+  Boolean: boolean;
+  Int: number;
+  Float: number;
 };
 
 export type Article = {
   __typename?: 'Article';
   author: User;
-  id: Scalars['ID']['output'];
-  text: Scalars['String']['output'];
-  title: Scalars['String']['output'];
+  id: Scalars['ID'];
+  text: Scalars['String'];
+  title: Scalars['String'];
 };
 
 export type CreditCard = {
   __typename?: 'CreditCard';
-  cardNumber: Scalars['Int']['output'];
-  cardOwner: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
+  cardNumber: Scalars['Int'];
+  cardOwner: Scalars['String'];
+  id: Scalars['ID'];
 };
 
 export type Donation = {
   __typename?: 'Donation';
-  amount: Scalars['Float']['output'];
-  id: Scalars['ID']['output'];
+  amount: Scalars['Float'];
+  id: Scalars['ID'];
   recipient: User;
   sender: User;
 };
 
 export type DonationInput = {
-  amount: Scalars['Float']['input'];
-  paymentOption: Scalars['ID']['input'];
-  user: Scalars['ID']['input'];
+  amount: Scalars['Float'];
+  paymentOption: Scalars['ID'];
+  user: Scalars['ID'];
 };
 
 export type Mutation = {
   __typename?: 'Mutation';
   donate?: Maybe<Donation>;
-  pong?: Maybe<Scalars['Int']['output']>;
+  pong?: Maybe<Scalars['Int']>;
 };
 
 export type MutationDonateArgs = {
@@ -60,8 +58,8 @@ export type PaymentOption = CreditCard | Paypal;
 
 export type Paypal = {
   __typename?: 'Paypal';
-  id: Scalars['ID']['output'];
-  url: Scalars['String']['output'];
+  id: Scalars['ID'];
+  url: Scalars['String'];
 };
 
 export type Query = {
@@ -69,28 +67,28 @@ export type Query = {
   articleById?: Maybe<Article>;
   articles?: Maybe<Array<Article>>;
   articlesByUser?: Maybe<Array<Article>>;
-  ping?: Maybe<Scalars['Int']['output']>;
+  ping?: Maybe<Scalars['Int']>;
   userById?: Maybe<User>;
   users?: Maybe<Array<User>>;
 };
 
 export type QueryArticleByIdArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars['ID'];
 };
 
 export type QueryArticlesByUserArgs = {
-  userId: Scalars['ID']['input'];
+  userId: Scalars['ID'];
 };
 
 export type QueryUserByIdArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars['ID'];
 };
 
 export type User = {
   __typename?: 'User';
-  firstName: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  lastName: Scalars['String']['output'];
+  firstName: Scalars['String'];
+  id: Scalars['ID'];
+  lastName: Scalars['String'];
   paymentOptions?: Maybe<Array<PaymentOption>>;
 };
 
@@ -164,26 +162,21 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
   info: GraphQLResolveInfo
 ) => TResult | Promise<TResult>;
 
-/** Mapping of union types */
-export type ResolversUnionTypes<RefType extends Record<string, unknown>> = {
-  PaymentOption: CreditCard | Paypal;
-};
-
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
   Article: ResolverTypeWrapper<Article>;
-  Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
+  Boolean: ResolverTypeWrapper<Scalars['Boolean']>;
   CreditCard: ResolverTypeWrapper<CreditCard>;
   Donation: ResolverTypeWrapper<Donation>;
   DonationInput: DonationInput;
-  Float: ResolverTypeWrapper<Scalars['Float']['output']>;
-  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
-  Int: ResolverTypeWrapper<Scalars['Int']['output']>;
+  Float: ResolverTypeWrapper<Scalars['Float']>;
+  ID: ResolverTypeWrapper<Scalars['ID']>;
+  Int: ResolverTypeWrapper<Scalars['Int']>;
   Mutation: ResolverTypeWrapper<{}>;
-  PaymentOption: ResolverTypeWrapper<ResolversUnionTypes<ResolversTypes>['PaymentOption']>;
+  PaymentOption: ResolversTypes['CreditCard'] | ResolversTypes['Paypal'];
   Paypal: ResolverTypeWrapper<Paypal>;
   Query: ResolverTypeWrapper<{}>;
-  String: ResolverTypeWrapper<Scalars['String']['output']>;
+  String: ResolverTypeWrapper<Scalars['String']>;
   User: ResolverTypeWrapper<
     Omit<User, 'paymentOptions'> & { paymentOptions?: Maybe<Array<ResolversTypes['PaymentOption']>> }
   >;
@@ -192,18 +185,18 @@ export type ResolversTypes = {
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
   Article: Article;
-  Boolean: Scalars['Boolean']['output'];
+  Boolean: Scalars['Boolean'];
   CreditCard: CreditCard;
   Donation: Donation;
   DonationInput: DonationInput;
-  Float: Scalars['Float']['output'];
-  ID: Scalars['ID']['output'];
-  Int: Scalars['Int']['output'];
+  Float: Scalars['Float'];
+  ID: Scalars['ID'];
+  Int: Scalars['Int'];
   Mutation: {};
-  PaymentOption: ResolversUnionTypes<ResolversParentTypes>['PaymentOption'];
+  PaymentOption: ResolversParentTypes['CreditCard'] | ResolversParentTypes['Paypal'];
   Paypal: Paypal;
   Query: {};
-  String: Scalars['String']['output'];
+  String: Scalars['String'];
   User: Omit<User, 'paymentOptions'> & { paymentOptions?: Maybe<Array<ResolversParentTypes['PaymentOption']>> };
 };
 
